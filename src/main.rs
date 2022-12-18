@@ -1,4 +1,4 @@
-use actix_web_template::run;
+use actix_web_template::startup::run;
 use std::net::TcpListener;
 
 #[tokio::main]

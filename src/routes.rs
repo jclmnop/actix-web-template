@@ -1,5 +1,4 @@
-use crate::health_check;
-use actix_web::{web, Route};
+use actix_web::{web, HttpResponse, Route};
 
 /// Contains all information required to add a route to
 /// an instance of `actix_web::App`
@@ -35,4 +34,11 @@ impl ApiCommand {
             },
         }
     }
+}
+
+// TODO: move handlers to their own files when there are enough of them
+
+/// Response 200 if server is running
+async fn health_check() -> HttpResponse {
+    HttpResponse::Ok().finish()
 }
