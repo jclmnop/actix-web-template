@@ -1,36 +1,36 @@
 use actix_web::{web, HttpResponse, Route};
 
-/// Contains all information required to add a route to
+/// Contains all information required to add a route for a new endpoint to
 /// an instance of `actix_web::App`
-pub struct ApiRoute {
-    /// Path for this request
+pub struct EndpointRoute {
+    /// Path for this endpoint
     path: &'static str,
     /// Request handler
-    route: Route,
+    handler: Route,
 }
 
-/// GET and POST commands to be parsed by the API
-pub enum ApiCommand {
+/// GET and POST endpoints
+pub enum Endpoint {
     /// Return 200 if server is running
     HealthCheck,
 }
 
-impl ApiCommand {
+impl Endpoint {
     /// Path for this request
     pub fn get_path(&self) -> &'static str {
-        self.get_api_route().path
+        self.get_route().path
     }
 
     /// Request handler
-    pub fn get_route(&self) -> Route {
-        self.get_api_route().route
+    pub fn get_handler(&self) -> Route {
+        self.get_route().handler
     }
 
-    fn get_api_route(&self) -> ApiRoute {
+    fn get_route(&self) -> EndpointRoute {
         match self {
-            ApiCommand::HealthCheck => ApiRoute {
+            Endpoint::HealthCheck => EndpointRoute {
                 path: "/health_check",
-                route: web::get().to(health_check),
+                handler: web::get().to(health_check),
             },
         }
     }
