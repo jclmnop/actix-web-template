@@ -14,6 +14,9 @@ pub struct EndpointRoute {
 pub enum Endpoint {
     /// Return 200 if server is running
     HealthCheck,
+    /// Submit data via HTML form and update/add a database entry
+    ExamplePost,
+    // ExampleGet,
 }
 
 impl Endpoint {
@@ -33,6 +36,7 @@ impl Endpoint {
                 path: "/health_check",
                 handler: web::get().to(health_check),
             },
+            Endpoint::ExamplePost => todo!("need post handler"),
         }
     }
 }
