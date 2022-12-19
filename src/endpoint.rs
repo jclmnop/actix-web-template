@@ -1,4 +1,5 @@
-use actix_web::{web, HttpResponse, Route};
+use crate::routes::{example_post, health_check};
+use actix_web::{web, Route};
 
 /// Contains all information required to add a route for a new endpoint to
 /// an instance of `actix_web::App`
@@ -13,6 +14,9 @@ pub struct EndpointRoute {
 pub enum Endpoint {
     /// Return 200 if server is running
     HealthCheck,
+    /// Submit data via HTML form and update/add a database entry
+    ExamplePost,
+    // ExampleGet,
 }
 
 impl Endpoint {
@@ -32,13 +36,10 @@ impl Endpoint {
                 path: "/health_check",
                 handler: web::get().to(health_check),
             },
+            Endpoint::ExamplePost => EndpointRoute {
+                path: "/example_post",
+                handler: web::post().to(example_post),
+            },
         }
     }
-}
-
-// TODO: move handlers to their own files when there are enough of them
-
-/// Response 200 if server is running
-async fn health_check() -> HttpResponse {
-    HttpResponse::Ok().finish()
 }

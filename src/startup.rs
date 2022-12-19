@@ -1,4 +1,4 @@
-use crate::routes::Endpoint::HealthCheck;
+use crate::endpoint::Endpoint::{ExamplePost, HealthCheck};
 use actix_web::dev::{Server, ServiceFactory, ServiceRequest};
 use actix_web::{App, Error, HttpServer};
 use std::net::TcpListener;
@@ -16,4 +16,5 @@ fn build_app<T: ServiceFactory<ServiceRequest, Config = (), Error = Error, InitE
     app: App<T>,
 ) -> App<T> {
     app.route(HealthCheck.get_path(), HealthCheck.get_handler())
+        .route(ExamplePost.get_path(), ExamplePost.get_handler())
 }
