@@ -1,4 +1,4 @@
-use crate::routes::health_check;
+use crate::routes::{example_post, health_check};
 use actix_web::{web, Route};
 
 /// Contains all information required to add a route for a new endpoint to
@@ -36,7 +36,10 @@ impl Endpoint {
                 path: "/health_check",
                 handler: web::get().to(health_check),
             },
-            Endpoint::ExamplePost => todo!("need post handler"),
+            Endpoint::ExamplePost => EndpointRoute {
+                path: "/example_post",
+                handler: web::post().to(example_post),
+            },
         }
     }
 }
