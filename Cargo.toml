@@ -14,7 +14,7 @@ name = "actix-web-template"
 
 [dependencies]
 actix-web = "4.2.1"
-chrono = "0.4.23"
+chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
 config = "0.13.3"
 serde = { version = "1.0.151", features = ["derive"] }
 serde_urlencoded = "0.7.1"
