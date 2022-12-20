@@ -10,11 +10,8 @@ async fn example_post_returns_200_for_valid_form_data() {
     let address = test_app.address;
     let client = reqwest::Client::new();
 
-    let body = serde_urlencoded::to_string(&[
-        ("name", NAME),
-        ("email", EMAIL),
-    ])
-    .expect("Failed to urlencode string");
+    let body = serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
+        .expect("Failed to urlencode string");
 
     let response = client
         .post(format!("{address}{}", ExamplePost.get_path()))
