@@ -31,3 +31,14 @@ pub struct DatabaseSettings {
     pub host: String,
     pub database_name: String,
 }
+
+impl DatabaseSettings {
+    pub fn connection_string(&self) -> String {
+        let host = &self.host;
+        let port = self.port;
+        let username = &self.username;
+        let password = &self.password;
+        let database_name = &self.database_name;
+        format!("postgres://{username}:{password}@{host}:{port}/{database_name}")
+    }
+}
