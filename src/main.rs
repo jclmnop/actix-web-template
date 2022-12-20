@@ -1,6 +1,6 @@
+use actix_web_template::configuration::Settings;
 use actix_web_template::startup::run;
 use std::net::TcpListener;
-use actix_web_template::configuration::Settings;
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
