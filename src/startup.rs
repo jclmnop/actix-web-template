@@ -12,9 +12,10 @@ pub fn run(listener: TcpListener) -> Result<Server, std::io::Error> {
 }
 
 /// Build the actix-web application
-fn build_app<T: ServiceFactory<ServiceRequest, Config = (), Error = Error, InitError = ()>>(
-    app: App<T>,
-) -> App<T> {
+fn build_app<T>(app: App<T>) -> App<T>
+where
+    T: ServiceFactory<ServiceRequest, Config = (), Error = Error, InitError = ()>,
+{
     app.route(HealthCheck.get_path(), HealthCheck.get_handler())
         .route(ExamplePost.get_path(), ExamplePost.get_handler())
 }
