@@ -33,6 +33,7 @@ pub struct DatabaseSettings {
 }
 
 impl DatabaseSettings {
+    /// Connection string for database
     pub fn connection_string(&self) -> String {
         let host = &self.host;
         let port = self.port;
@@ -40,5 +41,14 @@ impl DatabaseSettings {
         let password = &self.password;
         let database_name = &self.database_name;
         format!("postgres://{username}:{password}@{host}:{port}/{database_name}")
+    }
+
+    /// Connection string for top level Postgres instance
+    pub fn connection_string_without_db(&self) -> String {
+        let host = &self.host;
+        let port = self.port;
+        let username = &self.username;
+        let password = &self.password;
+        format!("postgres://{username}:{password}@{host}:{port}")
     }
 }
