@@ -115,7 +115,7 @@ async fn db_not_updated_after_failed_post_attempt() {
     }
 
     //TODO: replace with a GET request
-    let new_entry = sqlx::query!(r#"SELECT * FROM example;"#)
+    let _ = sqlx::query!(r#"SELECT * FROM example;"#)
         .fetch_one(&test_app.db_pool)
         .await
         .expect("Failed to fetch updated table");
