@@ -218,4 +218,4 @@ jobs:
         uses: actions-rs/tarpaulin@v0.1
         with:
           version: latest
-          args: '--ignore-tests'
+          args: '--ignore-tests --skip-clean'
