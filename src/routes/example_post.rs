@@ -4,12 +4,12 @@ use sqlx::PgPool;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
-pub struct FormData {
+pub struct PostFormData {
     name: String,
     email: String,
 }
 
-pub async fn example_post(form: web::Form<FormData>, pool: web::Data<PgPool>) -> HttpResponse {
+pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>) -> HttpResponse {
     match sqlx::query!(
         r#"
         INSERT INTO example (id, email, name, added_at)

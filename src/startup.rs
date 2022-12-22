@@ -1,4 +1,4 @@
-use crate::endpoint::Endpoint::{ExamplePost, HealthCheck};
+use crate::endpoint::Endpoint::{ExampleGet, ExamplePost, HealthCheck};
 use actix_web::dev::{Server, ServiceFactory, ServiceRequest};
 use actix_web::{web, App, Error, HttpServer};
 use sqlx::PgPool;
@@ -20,5 +20,6 @@ where
     let connection_pool = web::Data::new(db_pool);
     app.route(HealthCheck.get_path(), HealthCheck.get_handler())
         .route(ExamplePost.get_path(), ExamplePost.get_handler())
+        .route(ExampleGet.get_path(), ExampleGet.get_handler())
         .app_data(connection_pool)
 }

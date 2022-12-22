@@ -1,4 +1,4 @@
-use crate::routes::{example_post, health_check};
+use crate::routes::{example_get, example_post, health_check};
 use actix_web::{web, Route};
 
 /// Contains all information required to add a route for a new endpoint to
@@ -16,9 +16,12 @@ pub enum Endpoint {
     HealthCheck,
     /// Submit data via HTML form and update/add a database entry
     ExamplePost,
-    // ExampleGet,
+    ExampleGet,
 }
 
+//TODO: refactor helper using get/post macros, and replace enums in paths with
+//      constants, which are also used in macro path
+//      e.g. #[get(path/to/endpoint/{param})] -> #[get(PATH_CONSTANT)]
 impl Endpoint {
     /// Path for this request
     pub fn get_path(&self) -> &'static str {
@@ -39,6 +42,10 @@ impl Endpoint {
             Endpoint::ExamplePost => EndpointRoute {
                 path: "/example_post",
                 handler: web::post().to(example_post),
+            },
+            Endpoint::ExampleGet => EndpointRoute {
+                path: "/example_get/{email}",
+                handler: web::get().to(example_get),
             },
         }
     }
