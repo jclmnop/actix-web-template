@@ -1,12 +1,12 @@
-use actix_web::web::Path;
-use serde_json::Value;
 use crate::utils::spawn_app;
-use actix_web_template::endpoint::Endpoint::{ExamplePost};
-use serde_urlencoded;
+use actix_web_template::endpoint::Endpoint::ExamplePost;
 use actix_web_template::routes::ExampleGetResponse;
+use serde_urlencoded;
 
+//TODO: break this test down into 3 tests
+// (will only work if they can somehow be peformed sequentially with same db instance)
 #[tokio::test]
-async fn example_post_returns_200_for_valid_form_data() {
+async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data() {
     const NAME: &str = "barry barryfield";
     const EMAIL: &str = "barry_bazza@barry.com";
     let test_app = spawn_app().await;
@@ -37,7 +37,7 @@ async fn example_post_returns_200_for_valid_form_data() {
 
     let email = EMAIL;
     let text_response = client
-        .get(format!("{address}/example_get/{email}"))//TODO: use .get_path() here?
+        .get(format!("{address}/example_get/{email}")) //TODO: use .get_path() here?
         .header("Content-Type", "application/json")
         .send()
         .await
@@ -47,7 +47,8 @@ async fn example_post_returns_200_for_valid_form_data() {
         .expect("Failed to parse text from get response");
 
     println!("{:?}", text_response);
-    let parsed_response: ExampleGetResponse = serde_json::from_str(&*text_response).expect("Error parsing json from text");
+    let parsed_response: ExampleGetResponse =
+        serde_json::from_str(&*text_response).expect("Error parsing json from text");
     assert_eq!(NAME, parsed_response.name);
     assert_eq!(EMAIL, parsed_response.email);
 }
