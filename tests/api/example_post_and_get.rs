@@ -2,6 +2,7 @@ use crate::utils::spawn_app;
 use actix_web_template::endpoint::Endpoint::ExamplePost;
 use actix_web_template::routes::ExampleGetResponse;
 use serde_urlencoded;
+use urlencoding;
 
 //TODO: break this test down into 3 tests
 // (will only work if they can somehow be peformed sequentially with same db instance)
@@ -38,7 +39,6 @@ async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
     let email = EMAIL;
     let text_response = client
         .get(format!("{address}/example_get/{email}")) //TODO: use .get_path() here?
-        .header("Content-Type", "application/json")
         .send()
         .await
         .expect("GET request failed")
@@ -138,4 +138,62 @@ async fn db_not_updated_after_failed_post_attempt() {
         .fetch_one(&test_app.db_pool)
         .await
         .expect("Failed to fetch updated table");
+}
+
+#[tokio::test]
+async fn example_get_returns_404_for_nonexistant_data() {
+    // const EMAIL: &str = "does_not_exist@foo.com";
+    const EMAIL: &str = "does_not_exist@foo.com";
+    let test_app = spawn_app().await;
+    let address = test_app.address;
+    let client = reqwest::Client::new();
+
+    let response = client
+        .get(format!("{address}/example_get/{EMAIL}")) //TODO: use .get_path() here?
+        .send()
+        .await
+        .expect("GET request failed");
+
+    assert_eq!(404, response.status().as_u16());
+}
+
+#[tokio::test]
+async fn example_get_returns_404_for_basic_injection() {
+    const BAD_EMAIL: &str = "barry_bazza@barry.com OR 1=1;";
+    const NAME: &str = "barry barryfield";
+    const EMAIL: &str = "barry_bazza@barry.com";
+    let bad_email: String = urlencoding::encode(BAD_EMAIL).into_owned();
+    let test_app = spawn_app().await;
+    let address = test_app.address;
+    let client = reqwest::Client::new();
+
+    let post_body = serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
+        .expect("Failed to urlencode POST request");
+
+    let post_response = client
+        .post(format!("{address}{}", ExamplePost.get_path()))
+        .header("Content-Type", "application/x-www-form-urlencoded")
+        .body(post_body)
+        .send()
+        .await
+        .expect("POST request failed");
+
+    let status = post_response.status().as_u16();
+    assert_eq!(200, status);
+
+    let new_entry = sqlx::query!(r#"SELECT * FROM example;"#)
+        .fetch_one(&test_app.db_pool)
+        .await
+        .expect("Failed to fetch updated table");
+
+    assert_eq!(NAME, new_entry.name);
+    assert_eq!(EMAIL, new_entry.email);
+
+    let bad_request_response = client
+        .get(format!("{address}/example_get/{bad_email}")) //TODO: use .get_path() here?
+        .send()
+        .await
+        .expect("GET request failed");
+
+    assert_eq!(404, bad_request_response.status().as_u16());
 }
