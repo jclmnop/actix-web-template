@@ -193,6 +193,7 @@ dependencies = [
  "serde_json",
  "serde_urlencoded",
  "sqlx",
+ "strfmt",
  "tokio",
  "urlencoding",
  "uuid",
@@ -1834,6 +1835,12 @@ dependencies = [
  "tokio",
  "tokio-rustls",
 ]
+
+[[package]]
+name = "strfmt"
+version = "0.2.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "26cdabcdab6da7e8c2ac1160e917ec83e78bbe3e10325e17d532718c67a4828f"
 
 [[package]]
 name = "stringprep"
