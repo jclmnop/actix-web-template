@@ -1,6 +1,7 @@
 use crate::routes::{example_get, example_post, health_check};
 use actix_web::{web, Route};
 
+
 /// Contains all information required to add a route for a new endpoint to
 /// an instance of `actix_web::App`
 pub struct EndpointRoute {

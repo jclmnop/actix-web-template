@@ -12,6 +12,9 @@ path = "src/lib.rs"
 path = "src/main.rs"
 name = "actix-web-template"
 
+[dependencies.endpoint_derive]
+path = "endpoint_derive"
+
 [dependencies]
 actix-web = "4.2.1"
 chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
