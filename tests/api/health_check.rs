@@ -1,6 +1,6 @@
 use crate::utils::spawn_app;
-use actix_web_template::endpoint::PublicEndpoint::HealthCheck;
 use actix_web_template::endpoint::Endpoints;
+use actix_web_template::endpoint::PublicEndpoint::HealthCheck;
 
 #[tokio::test]
 async fn health_check_works() {
