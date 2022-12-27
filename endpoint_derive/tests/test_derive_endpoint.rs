@@ -1,4 +1,4 @@
-use actix_web::{web, Route, HttpResponse};
+use actix_web::{web, HttpResponse, Route};
 use endpoint_derive::Endpoints;
 
 pub async fn example_get() -> HttpResponse {
