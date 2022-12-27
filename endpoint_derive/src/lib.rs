@@ -30,14 +30,14 @@ fn impl_endpoints(ast: &DeriveInput) -> TokenStream {
     quote!(
         /// Contains all information required to add a route for a new endpoint to
         /// an instance of `actix_web::App`
-        struct #output_struct_name {
+        pub struct #output_struct_name {
             /// Path for this endpoint
             path: &'static str,
             /// Request handler
             handler: Route,
         }
 
-        trait Endpoints {
+        pub trait Endpoints {
             fn get_path(&self) -> &'static str;
             fn get_handler(&self) -> Route;
             fn get_route(&self) -> #output_struct_name;
