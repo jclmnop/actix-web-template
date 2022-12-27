@@ -20,7 +20,7 @@ pub fn derive_endpoints(tokens: TokenStream) -> TokenStream {
 
 fn impl_endpoints(ast: &DeriveInput) -> TokenStream {
     let name = &ast.ident;
-    let output_struct_name = &Ident::new(&*format!("{}Route", name.to_string()), Span::call_site());
+    let output_struct_name = &Ident::new(&format!("{}Route", name), Span::call_site());
     let gen_impl_get_routes = match ast.data {
         syn::Data::Enum(ref data_enum) => impl_get_routes(data_enum, name, output_struct_name),
         _ => panic!("Must be an enum"),
