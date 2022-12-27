@@ -1,5 +1,5 @@
 use crate::utils::spawn_app;
-use actix_web_template::endpoint::Endpoint::HealthCheck;
+use actix_web_template::endpoint::PublicEndpoint::HealthCheck;
 use actix_web_template::endpoint::Endpoints;
 
 #[tokio::test]

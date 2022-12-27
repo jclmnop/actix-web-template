@@ -1,5 +1,5 @@
 use crate::utils::spawn_app;
-use actix_web_template::endpoint::Endpoint::{ExampleGet, ExamplePost};
+use actix_web_template::endpoint::PublicEndpoint::{ExampleGet, ExamplePost};
 use actix_web_template::endpoint::Endpoints;
 use actix_web_template::routes::ExampleGetResponse;
 use serde_urlencoded;

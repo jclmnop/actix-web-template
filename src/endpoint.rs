@@ -4,7 +4,7 @@ use endpoint_derive::Endpoints;
 
 /// GET and POST endpoints
 #[derive(Endpoints)]
-pub enum Endpoint {
+pub enum PublicEndpoint {
     /// Return 200 if server is running
     #[endpoint(get, "/health_check", handler = "health_check")]
     HealthCheck,
