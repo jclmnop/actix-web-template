@@ -74,16 +74,22 @@ fn impl_get_routes(data_enum: &DataEnum, name: &Ident, output_struct_name: &Iden
         let mut arm: Option<TokenStream2> = None;
         for attr in variant.attrs.iter() {
             let attr = attr.parse_meta().expect("Failed to parse attr");
-                if let Meta::List(MetaList {
-                    ref path,
-                    ref nested,
-                    ..
-                }) = attr {
-                    if path.is_ident("endpoint") {
-                        arm = Some(endpoint_helper_attr(nested, name, variant_name, output_struct_name));
-                    }
+            if let Meta::List(MetaList {
+                ref path,
+                ref nested,
+                ..
+            }) = attr
+            {
+                if path.is_ident("endpoint") {
+                    arm = Some(endpoint_helper_attr(
+                        nested,
+                        name,
+                        variant_name,
+                        output_struct_name,
+                    ));
                 }
             }
+        }
         let arm = arm.expect("Failed to parse endpoint() attribute");
         arms.push(arm);
     }
@@ -117,17 +123,23 @@ fn endpoint_helper_attr(
                     let methods = vec!["get", "post", "put", "delete", "head"];
                     let ident = path.get_ident().expect("Invalid ident for method");
                     let ident_str = ident.to_string().to_lowercase();
-                    if methods.iter().map(|x| String::from(*x)).any(|x| x == ident_str) {
+
+                    // If ident_str is in methods
+                    if methods
+                        .iter()
+                        .map(|x| String::from(*x))
+                        .any(|x| x == ident_str)
+                    {
                         method = Some(ident.clone());
                     }
                 }
                 Meta::NameValue(MetaNameValue {
-                    ref path, ref lit, ..
+                    ref path,
+                    lit: Lit::Str(litstr),
+                    ..
                 }) => {
-                    if let Lit::Str(litstr) = lit {
-                        if path.is_ident("handler") {
-                            handler = Some(litstr.parse().expect("Failed to parse handler name"));
-                        }
+                    if path.is_ident("handler") {
+                        handler = Some(litstr.parse().expect("Failed to parse handler name"));
                     }
                 }
                 _ => (),
