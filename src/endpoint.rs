@@ -1,52 +1,16 @@
 use crate::routes::{example_get, example_post, health_check};
 use actix_web::{web, Route};
-
-/// Contains all information required to add a route for a new endpoint to
-/// an instance of `actix_web::App`
-pub struct EndpointRoute {
-    /// Path for this endpoint
-    path: &'static str,
-    /// Request handler
-    handler: Route,
-}
+use endpoint_derive::Endpoints;
 
 /// GET and POST endpoints
-pub enum Endpoint {
+#[derive(Endpoints)]
+pub enum PublicEndpoint {
     /// Return 200 if server is running
+    #[endpoint(get, "/health_check", handler = "health_check")]
     HealthCheck,
     /// Submit data via HTML form and update/add a database entry
+    #[endpoint(post, "/example_post", handler = "example_post")]
     ExamplePost,
+    #[endpoint(get, "/example_get/{email}", handler = "example_get")]
     ExampleGet,
-}
-
-//TODO: refactor helper using get/post macros, and replace enums in paths with
-//      constants, which are also used in macro path
-//      e.g. #[get(path/to/endpoint/{param})] -> #[get(PATH_CONSTANT)]
-impl Endpoint {
-    /// Path for this request
-    pub fn get_path(&self) -> &'static str {
-        self.get_route().path
-    }
-
-    /// Request handler
-    pub fn get_handler(&self) -> Route {
-        self.get_route().handler
-    }
-
-    fn get_route(&self) -> EndpointRoute {
-        match self {
-            Endpoint::HealthCheck => EndpointRoute {
-                path: "/health_check",
-                handler: web::get().to(health_check),
-            },
-            Endpoint::ExamplePost => EndpointRoute {
-                path: "/example_post",
-                handler: web::post().to(example_post),
-            },
-            Endpoint::ExampleGet => EndpointRoute {
-                path: "/example_get/{email}",
-                handler: web::get().to(example_get),
-            },
-        }
-    }
 }
