@@ -11,18 +11,14 @@ pub async fn example_post() -> HttpResponse {
 
 #[derive(Endpoints)]
 enum Endpoint {
-    #[get]
-    #[endpoint_path = "/hello"]
-    #[handler = "example_get"]
+    #[endpoint(get, "/hello", handler = "example_get")]
     GetEndpoint,
-    #[post]
-    #[endpoint_path = "/hello"]
-    #[handler = "example_post"]
+    #[endpoint(post, "/hello_post", handler = "example_post")]
     PostEndpoint,
 }
 
 #[test]
 fn it_works() {
     assert_eq!(Endpoint::GetEndpoint.get_path(), "/hello");
-    assert_eq!(Endpoint::PostEndpoint.get_path(), "/hello");
+    assert_eq!(Endpoint::PostEndpoint.get_path(), "/hello_post");
 }

@@ -20,8 +20,9 @@ pub fn derive_endpoints(tokens: TokenStream) -> TokenStream {
 
 fn impl_endpoints(ast: &DeriveInput) -> TokenStream {
     let name = &ast.ident;
+    let output_struct_name = &Ident::new(&*format!("{}Route", name.to_string()), Span::call_site());
     let gen_impl_get_routes = match ast.data {
-        syn::Data::Enum(ref data_enum) => impl_get_routes(data_enum, name),
+        syn::Data::Enum(ref data_enum) => impl_get_routes(data_enum, name, output_struct_name),
         _ => panic!("Must be an enum"),
     };
     let gen_impl_getters = impl_getters();
@@ -29,7 +30,7 @@ fn impl_endpoints(ast: &DeriveInput) -> TokenStream {
     quote!(
         /// Contains all information required to add a route for a new endpoint to
         /// an instance of `actix_web::App`
-        struct #name + "Route" {
+        struct #output_struct_name {
             /// Path for this endpoint
             path: &'static str,
             /// Request handler
@@ -39,7 +40,7 @@ fn impl_endpoints(ast: &DeriveInput) -> TokenStream {
         trait Endpoints {
             fn get_path(&self) -> &'static str;
             fn get_handler(&self) -> Route;
-            fn get_route(&self) -> EndpointRoute;
+            fn get_route(&self) -> #output_struct_name;
         }
 
         impl Endpoints for #name {
@@ -66,7 +67,7 @@ fn impl_getters() -> TokenStream2 {
     )
 }
 
-fn impl_get_routes(data_enum: &DataEnum, name: &Ident) -> TokenStream2 {
+fn impl_get_routes(data_enum: &DataEnum, name: &Ident, output_struct_name: &Ident) -> TokenStream2 {
     let mut arms: Vec<TokenStream2> = Vec::new();
     for variant in data_enum.variants.iter() {
         let variant_name = &variant.ident;
@@ -79,7 +80,7 @@ fn impl_get_routes(data_enum: &DataEnum, name: &Ident) -> TokenStream2 {
                     ..
                 }) = attr {
                     if path.is_ident("endpoint") {
-                        arm = Some(endpoint_helper_attr(nested, name, variant_name));
+                        arm = Some(endpoint_helper_attr(nested, name, variant_name, output_struct_name));
                     }
                 }
             }
@@ -90,7 +91,7 @@ fn impl_get_routes(data_enum: &DataEnum, name: &Ident) -> TokenStream2 {
         panic!("At least one variant must be annotated with #[endpoint(..)] attribute");
     }
     quote!(
-        fn get_route(&self) -> #name + "Route" {
+        fn get_route(&self) -> #output_struct_name {
             match self {
                 #(#arms)*
             }
@@ -102,6 +103,7 @@ fn endpoint_helper_attr(
     args: &Punctuated<NestedMeta, Comma>,
     name: &Ident,
     variant_name: &Ident,
+    output_struct_name: &Ident,
 ) -> TokenStream2 {
     let args: Vec<&NestedMeta> = args.iter().collect();
     let mut endpoint_path: Option<String> = None;
@@ -140,7 +142,7 @@ fn endpoint_helper_attr(
     let handler = handler.expect("Failed to parse handler name");
     let endpoint_path = endpoint_path.expect("Failed to parse path");
     quote!(
-        #name::#variant_name => EndpointRoute {
+        #name::#variant_name => #output_struct_name {
             path: &*#endpoint_path,
             handler: web::#method().to(#handler),
         },
