@@ -1,4 +1,5 @@
 use crate::endpoint::Endpoint::{ExampleGet, ExamplePost, HealthCheck};
+use crate::endpoint::Endpoints;
 use actix_web::dev::{Server, ServiceFactory, ServiceRequest};
 use actix_web::{web, App, Error, HttpServer};
 use sqlx::PgPool;

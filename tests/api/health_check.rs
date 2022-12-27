@@ -1,4 +1,6 @@
 use crate::utils::spawn_app;
+use actix_web_template::endpoint::Endpoint::HealthCheck;
+use actix_web_template::endpoint::Endpoints;
 
 #[tokio::test]
 async fn health_check_works() {
@@ -7,7 +9,7 @@ async fn health_check_works() {
     let client = reqwest::Client::new();
 
     let response = client
-        .get(&format!("{address}/health_check"))
+        .get(&format!("{address}{}", HealthCheck.get_path()))
         .send()
         .await
         .expect("Failed to execute request");
