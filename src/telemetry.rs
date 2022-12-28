@@ -16,5 +16,7 @@ pub fn get_subscriber(name: String, log_filter: String) -> impl Subscriber + Sen
 
 pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
     LogTracer::init().expect("Failed to set logger");
+    tracing::info!("Logger set.");
     set_global_default(subscriber).expect("Failed to set subscriber");
+    tracing::info!("Subscriber set.");
 }

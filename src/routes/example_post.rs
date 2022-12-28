@@ -1,6 +1,7 @@
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
+use tracing::Instrument;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
@@ -10,6 +11,16 @@ pub struct PostFormData {
 }
 
 pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>) -> HttpResponse {
+    let request_id = Uuid::new_v4();
+    let request_span = tracing::info_span!(
+        "Processing new POST request",
+        %request_id,
+        %form.name,
+        %form.email,
+    );
+    let _request_span_guard = request_span.enter();
+    let query_span = tracing::info_span!("Writing new data to database");
+
     match sqlx::query!(
         r#"
         INSERT INTO example (id, email, name, added_at)
@@ -21,11 +32,12 @@ pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>
         Utc::now(),
     )
     .execute(pool.get_ref())
+    .instrument(query_span)
     .await
     {
         Ok(_) => HttpResponse::Ok().finish(),
         Err(e) => {
-            println!("Failed to execute query: {e}");
+            tracing::error!("Failed to execute query: {:?}", e);
             HttpResponse::InternalServerError().finish()
         }
     }

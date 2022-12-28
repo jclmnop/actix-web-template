@@ -1,8 +1,8 @@
 use actix_web_template::configuration::Settings;
 use actix_web_template::startup::run;
+use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use sqlx::PgPool;
 use std::net::TcpListener;
-use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 
 const APP_NAME: &str = "example-app";
 const DEFAULT_LOG_LEVEL: &str = "info";
