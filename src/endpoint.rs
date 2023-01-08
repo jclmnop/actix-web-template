@@ -1,16 +1,28 @@
-use crate::routes::{example_get, example_post, health_check};
-use actix_web::{web, Route};
-use endpoint_derive::Endpoints;
+use crate::routes;
+use actix_web::{get, post, web, Responder};
+use proc_macros::add_path_const;
+use sqlx::PgPool;
 
-/// GET and POST endpoints
-#[derive(Endpoints)]
-pub enum PublicEndpoint {
-    /// Return 200 if server is running
-    #[endpoint(get, "/health_check", handler = "health_check")]
-    HealthCheck,
-    /// Submit data via HTML form and update/add a database entry
-    #[endpoint(post, "/example_post", handler = "example_post")]
-    ExamplePost,
-    #[endpoint(get, "/example_get/{email}", handler = "example_get")]
-    ExampleGet,
+/// Get the data associated with an email address, or return 400
+#[add_path_const]
+#[get("/example_get/{email}")]
+pub async fn example_get(email: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+    routes::example_get(email, pool).await
+}
+
+/// Add a new entry to database via urlencoded web form
+#[add_path_const]
+#[post("/example_post")]
+pub async fn example_post(
+    form: web::Form<routes::PostFormData>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
+    routes::example_post(form, pool).await
+}
+
+/// Response 200 if server is running
+#[add_path_const]
+#[get("/health_check")]
+pub async fn health_check() -> impl Responder {
+    routes::health_check().await
 }

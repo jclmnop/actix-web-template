@@ -1,5 +1,4 @@
-use crate::endpoint::Endpoints;
-use crate::endpoint::PublicEndpoint::{ExampleGet, ExamplePost, HealthCheck};
+use crate::endpoint::{example_get, example_post, health_check};
 use actix_web::dev::{Server, ServiceFactory, ServiceRequest};
 use actix_web::{web, App, Error, HttpServer};
 use sqlx::PgPool;
@@ -13,14 +12,15 @@ pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Er
     Ok(server)
 }
 
+//TODO: replace with config
 /// Build the actix-web application
 fn build_app<T>(app: App<T>, db_pool: PgPool) -> App<T>
 where
     T: ServiceFactory<ServiceRequest, Config = (), Error = Error, InitError = ()>,
 {
     let connection_pool = web::Data::new(db_pool);
-    app.route(HealthCheck.get_path(), HealthCheck.get_handler())
-        .route(ExamplePost.get_path(), ExamplePost.get_handler())
-        .route(ExampleGet.get_path(), ExampleGet.get_handler())
+    app.service(health_check)
+        .service(example_get)
+        .service(example_post)
         .app_data(connection_pool)
 }
