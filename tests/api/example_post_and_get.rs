@@ -1,6 +1,5 @@
 use crate::utils::spawn_app;
-use actix_web_template::endpoint::Endpoints;
-use actix_web_template::endpoint::PublicEndpoint::{ExampleGet, ExamplePost};
+use actix_web_template::endpoint::{example_get, example_post};
 use actix_web_template::routes::ExampleGetResponse;
 use serde_urlencoded;
 use strfmt::strfmt;
@@ -20,7 +19,7 @@ async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
         .expect("Failed to urlencode POST request");
 
     let post_response = client
-        .post(format!("{address}{}", ExamplePost.get_path()))
+        .post(format!("{address}{}", example_post::PATH))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(post_body)
         .send()
@@ -42,7 +41,7 @@ async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
     let text_response = client
         .get(format!(
             "{address}{}",
-            strfmt!(ExampleGet.get_path(), email).unwrap()
+            strfmt!(example_get::PATH, email).expect("Failed to format request url")
         ))
         .send()
         .await
@@ -82,7 +81,7 @@ async fn example_post_returns_400_for_invalid_form_data() {
 
     for (body, error_msg) in invalid_bodies {
         let response = client
-            .post(format!("{address}{}", ExamplePost.get_path()))
+            .post(format!("{address}{}", example_post::PATH))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()
@@ -123,7 +122,7 @@ async fn db_not_updated_after_failed_post_attempt() {
 
     for (body, error_msg) in invalid_bodies {
         let response = client
-            .post(format!("{address}{}", ExamplePost.get_path()))
+            .post(format!("{address}{}", example_post::PATH))
             .header("Content-Type", "application/x-www-form-urlencoded")
             .body(body)
             .send()
@@ -154,7 +153,7 @@ async fn example_get_returns_404_for_nonexistant_data() {
     let response = client
         .get(format!(
             "{address}{}",
-            strfmt!(ExampleGet.get_path(), email => EMAIL).unwrap()
+            strfmt!(example_get::PATH, email => EMAIL).unwrap()
         ))
         .send()
         .await
@@ -177,7 +176,7 @@ async fn example_get_returns_404_for_basic_injection() {
         .expect("Failed to urlencode POST request");
 
     let post_response = client
-        .post(format!("{address}{}", ExamplePost.get_path()))
+        .post(format!("{address}{}", example_post::PATH))
         .header("Content-Type", "application/x-www-form-urlencoded")
         .body(post_body)
         .send()
@@ -198,7 +197,7 @@ async fn example_get_returns_404_for_basic_injection() {
     let bad_request_response = client
         .get(format!(
             "{address}{}",
-            strfmt!(ExampleGet.get_path(), email => bad_email).unwrap()
+            strfmt!(example_get::PATH, email => bad_email).unwrap()
         ))
         .send()
         .await
