@@ -12,8 +12,8 @@ path = "src/lib.rs"
 path = "src/main.rs"
 name = "actix-web-template"
 
-[dependencies.endpoint_derive]
-path = "endpoint_derive"
+[dependencies.proc-macros]
+path = "proc_macros"
 
 [dependencies]
 actix-web = "4.2.1"
