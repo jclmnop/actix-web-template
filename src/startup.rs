@@ -1,9 +1,9 @@
 use crate::endpoint::{example_get, example_post, health_check};
 use actix_web::dev::Server;
-use actix_web::middleware::Logger;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
+use tracing_actix_web::TracingLogger;
 
 /// Run the server using the provided TCP Listener
 pub fn run(
@@ -15,7 +15,7 @@ pub fn run(
     let server = HttpServer::new(move || {
         //TODO: add service in config fn instead
         App::new()
-            .wrap(Logger::default())
+            .wrap(TracingLogger::default())
             .service(health_check)
             .service(example_get)
             .service(example_post)

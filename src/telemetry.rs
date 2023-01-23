@@ -30,8 +30,10 @@ pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
     tracing::info!("Subscriber set.");
 }
 
-/// Creates a unique ID for the current request, creates the `info_span` and
-/// then enters the span to create the guard.
+/// Creates the `info_span` and then enters the span to create the guard.
+///
+/// Removed request_id generation as `tracing_actix_web::TracingLogger` takes
+/// care of that.
 ///
 /// First arg is a string literal which is used as a "name" for the span.
 /// The est of the arguments are fields to be displayed within the trace. `%`
@@ -52,19 +54,19 @@ pub fn init_subscriber(subscriber: impl Subscriber + Send + Sync) {
 #[macro_export]
 macro_rules! init_request_trace {
     ($name:literal, $($field:tt)*) => {
-        let request_id = ::uuid::Uuid::new_v4();
+        // let request_id = ::uuid::Uuid::new_v4();
         let request_span = ::tracing::info_span!(
             $name,
-            %request_id,
+            // %request_id,
             $($field)*
         );
         let _request_span_guard = request_span.enter();
     };
     ($name:literal) => {
-        let request_id = ::uuid::Uuid::new_v4();
+        // let request_id = ::uuid::Uuid::new_v4();
         let request_span = ::tracing::info_span!(
             $name,
-            %request_id,
+            // %request_id,
         );
         let _request_span_guard = request_span.enter();
     };
