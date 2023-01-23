@@ -42,8 +42,10 @@ fn add_path_const_attr(_args: TokenStream, item: TokenStream) -> TokenStream {
             if let Some(attr_ident) = path.get_ident() {
                 if methods.contains(attr_ident) {
                     valid_method_attr_exists = true;
-                    endpoint_path =
-                        get_endpoint_path_from_attr_args(nested, &SpanRange::from_tokens(&attr));
+                    endpoint_path = get_endpoint_path_from_attr_args(
+                        nested,
+                        &SpanRange::from_tokens(&attr),
+                    );
                     break;
                 }
             }
@@ -79,7 +81,10 @@ fn get_endpoint_path_from_attr_args(
     abort!(span_range, "No endpoint path in method attribute.");
 }
 
-fn impl_path_for_struct(endpoint_path: Option<String>, fn_ident: &Ident) -> TokenStream2 {
+fn impl_path_for_struct(
+    endpoint_path: Option<String>,
+    fn_ident: &Ident,
+) -> TokenStream2 {
     let endpoint_path = &*endpoint_path.unwrap_or_else(|| {
         abort!(
             SpanRange::call_site(),

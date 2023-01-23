@@ -8,15 +8,17 @@ use urlencoding;
 //TODO: break this test down into 3 tests
 // (will only work if they can somehow be peformed sequentially with same db instance)
 #[tokio::test]
-async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data() {
+async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
+{
     const NAME: &str = "barry barryfield";
     const EMAIL: &str = "barry_bazza@barry.com";
     let test_app = spawn_app().await;
     let address = test_app.address;
     let client = reqwest::Client::new();
 
-    let post_body = serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
-        .expect("Failed to urlencode POST request");
+    let post_body =
+        serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
+            .expect("Failed to urlencode POST request");
 
     let post_response = client
         .post(format!("{address}{}", example_post::PATH))
@@ -41,7 +43,8 @@ async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
     let text_response = client
         .get(format!(
             "{address}{}",
-            strfmt!(example_get::PATH, email).expect("Failed to format request url")
+            strfmt!(example_get::PATH, email)
+                .expect("Failed to format request url")
         ))
         .send()
         .await
@@ -52,7 +55,8 @@ async fn example_post_returns_200_for_valid_form_data_and_get_returns_new_data()
 
     println!("{:?}", text_response);
     let parsed_response: ExampleGetResponse =
-        serde_json::from_str(&*text_response).expect("Error parsing json from text");
+        serde_json::from_str(&*text_response)
+            .expect("Error parsing json from text");
     assert_eq!(NAME, parsed_response.name);
     assert_eq!(EMAIL, parsed_response.email);
 }
@@ -65,11 +69,13 @@ async fn example_post_returns_400_for_invalid_form_data() {
 
     let invalid_bodies = vec![
         (
-            serde_urlencoded::to_string(&[("name", "barry barryfield")]).unwrap(),
+            serde_urlencoded::to_string(&[("name", "barry barryfield")])
+                .unwrap(),
             "missing email",
         ),
         (
-            serde_urlencoded::to_string(&[("email", "barry@barry.com")]).unwrap(),
+            serde_urlencoded::to_string(&[("email", "barry@barry.com")])
+                .unwrap(),
             "missing name",
         ),
         (String::from(""), "missing both name and email"),
@@ -106,11 +112,13 @@ async fn db_not_updated_after_failed_post_attempt() {
 
     let invalid_bodies = vec![
         (
-            serde_urlencoded::to_string(&[("name", "barry barryfield")]).unwrap(),
+            serde_urlencoded::to_string(&[("name", "barry barryfield")])
+                .unwrap(),
             "missing email",
         ),
         (
-            serde_urlencoded::to_string(&[("email", "barry@barry.com")]).unwrap(),
+            serde_urlencoded::to_string(&[("email", "barry@barry.com")])
+                .unwrap(),
             "missing name",
         ),
         (String::from(""), "missing both name and email"),
@@ -172,8 +180,9 @@ async fn example_get_returns_404_for_basic_injection() {
     let address = test_app.address;
     let client = reqwest::Client::new();
 
-    let post_body = serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
-        .expect("Failed to urlencode POST request");
+    let post_body =
+        serde_urlencoded::to_string(&[("name", NAME), ("email", EMAIL)])
+            .expect("Failed to urlencode POST request");
 
     let post_response = client
         .post(format!("{address}{}", example_post::PATH))

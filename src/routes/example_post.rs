@@ -5,12 +5,26 @@ use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct PostFormData {
-    name: String,
-    email: String,
+    pub name: String,
+    pub email: String,
 }
 
-pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>) -> HttpResponse {
-    match sqlx::query!(
+pub async fn example_post(
+    form: web::Form<PostFormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
+    match write_db(&form, &pool).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
+
+#[tracing::instrument(name = "Writing new data to database", skip(form, pool))]
+async fn write_db(
+    form: &PostFormData,
+    pool: &PgPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO example (id, email, name, added_at)
         VALUES ($1, $2, $3, $4)
@@ -20,13 +34,11 @@ pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>
         form.name,
         Utc::now(),
     )
-    .execute(pool.get_ref())
+    .execute(pool)
     .await
-    {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            println!("Failed to execute query: {e}");
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
 }
