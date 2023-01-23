@@ -9,7 +9,11 @@ const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    let subscriber = get_subscriber(APP_NAME.into(), DEFAULT_LOG_LEVEL.into());
+    let subscriber = get_subscriber(
+        APP_NAME.into(),
+        DEFAULT_LOG_LEVEL.into(),
+        std::io::stdout,
+    );
     init_subscriber(subscriber);
 
     let configuration = Settings::get_config().expect("Failed to load config");

@@ -2,15 +2,21 @@ use tracing::subscriber::set_global_default;
 use tracing::Subscriber;
 use tracing_bunyan_formatter::{BunyanFormattingLayer, JsonStorageLayer};
 use tracing_log::LogTracer;
+use tracing_subscriber::fmt::MakeWriter;
 use tracing_subscriber::{layer::SubscriberExt, EnvFilter, Registry};
 
-pub fn get_subscriber(
+pub fn get_subscriber<Sink>(
     name: String,
     log_filter: String,
-) -> impl Subscriber + Send + Sync {
+    sink: Sink,
+) -> impl Subscriber + Send + Sync
+where
+    //TODO: learn about HRTBs
+    Sink: for<'a> MakeWriter<'a> + Send + Sync + 'static,
+{
     let log_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new(log_filter));
-    let formatting_layer = BunyanFormattingLayer::new(name, std::io::stdout);
+    let formatting_layer = BunyanFormattingLayer::new(name, sink);
     Registry::default()
         .with(log_filter)
         .with(JsonStorageLayer)

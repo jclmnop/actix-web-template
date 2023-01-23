@@ -1,5 +1,7 @@
 use actix_web_template::configuration::{DatabaseSettings, Settings};
 use actix_web_template::startup::run;
+use actix_web_template::telemetry::{get_subscriber, init_subscriber};
+use once_cell::sync::Lazy;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -8,6 +10,26 @@ const TEST_HOST: &str = "127.0.0.1";
 // Port 0 selects a random available port
 const TEST_PORT: u16 = 0;
 
+static TRACING: Lazy<()> = Lazy::new(|| {
+    let default_filter_level = "info".to_string();
+    let subscriber_name = "test".to_string();
+    if std::env::var("TEST_LOG").is_ok() {
+        let subscriber = get_subscriber(
+            subscriber_name,
+            default_filter_level,
+            std::io::stdout,
+        );
+        init_subscriber(subscriber);
+    } else {
+        let subscriber = get_subscriber(
+            subscriber_name,
+            default_filter_level,
+            std::io::sink,
+        );
+        init_subscriber(subscriber);
+    };
+});
+
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
@@ -15,7 +37,13 @@ pub struct TestApp {
 
 /// Spawn an instance of the app using a random available port and return the
 /// address used, including the selected port.
+///
+/// Use `TEST_LOG=true` to view all log outputs from tests.
+/// For example: `TEST_LOG=true cargo test` or `TEST_LOG=true cargo test | bunyan`
+/// if you'd like to prettify log output through the bunyan cli app.
 pub async fn spawn_app() -> TestApp {
+    Lazy::force(&TRACING);
+
     let test_address = format!("{TEST_HOST}:{TEST_PORT}");
     let listener =
         TcpListener::bind(test_address).expect("Failed to bind to random port");
