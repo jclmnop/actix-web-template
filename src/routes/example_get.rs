@@ -8,7 +8,10 @@ pub struct ExampleGetResponse {
 }
 
 /// Get the data associated with an email address, or return 400
-pub async fn example_get(email: web::Path<String>, pool: web::Data<PgPool>) -> HttpResponse {
+pub async fn example_get(
+    email: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
     let email = email.to_string();
     let entry = sqlx::query!(
         r#"

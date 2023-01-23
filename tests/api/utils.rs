@@ -17,30 +17,37 @@ pub struct TestApp {
 /// address used, including the selected port.
 pub async fn spawn_app() -> TestApp {
     let test_address = format!("{TEST_HOST}:{TEST_PORT}");
-    let listener = TcpListener::bind(test_address).expect("Failed to bind to random port");
+    let listener =
+        TcpListener::bind(test_address).expect("Failed to bind to random port");
     let actual_port = listener.local_addr().unwrap().port();
     let address = format!("http://{TEST_HOST}:{actual_port}");
 
-    let mut configuration = Settings::get_config().expect("Failed to load config");
+    let mut configuration =
+        Settings::get_config().expect("Failed to load config");
 
     // Randomise database name so new database is used at start of each test
     configuration.database.database_name = Uuid::new_v4().to_string();
     // Create new database with randomised name
     let db_pool = configure_database(&configuration.database).await;
 
-    let server = run(listener, db_pool.clone()).expect("Failed to bind address");
+    let server =
+        run(listener, db_pool.clone()).expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
     TestApp { address, db_pool }
 }
 
 async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
-    let mut connection = PgConnection::connect(&db_config.connection_string_without_db())
-        .await
-        .expect("Failed to connect to Postgres");
+    let mut connection =
+        PgConnection::connect(&db_config.connection_string_without_db())
+            .await
+            .expect("Failed to connect to Postgres");
 
     connection
-        .execute(format!(r#"CREATE DATABASE "{}";"#, db_config.database_name).as_str())
+        .execute(
+            format!(r#"CREATE DATABASE "{}";"#, db_config.database_name)
+                .as_str(),
+        )
         .await
         .expect("Failed to create database");
 

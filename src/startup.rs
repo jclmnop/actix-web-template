@@ -6,7 +6,10 @@ use sqlx::PgPool;
 use std::net::TcpListener;
 
 /// Run the server using the provided TCP Listener
-pub fn run(listener: TcpListener, db_pool: PgPool) -> Result<Server, std::io::Error> {
+pub fn run(
+    listener: TcpListener,
+    db_pool: PgPool,
+) -> Result<Server, std::io::Error> {
     let connection_pool = web::Data::new(db_pool);
     // Build the app
     let server = HttpServer::new(move || {

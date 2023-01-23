@@ -6,7 +6,10 @@ use sqlx::PgPool;
 /// Get the data associated with an email address, or return 400
 #[add_path_const]
 #[get("/example_get/{email}")]
-pub async fn example_get(email: web::Path<String>, pool: web::Data<PgPool>) -> impl Responder {
+pub async fn example_get(
+    email: web::Path<String>,
+    pool: web::Data<PgPool>,
+) -> impl Responder {
     routes::example_get(email, pool).await
 }
 

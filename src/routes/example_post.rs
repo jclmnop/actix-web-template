@@ -10,7 +10,10 @@ pub struct PostFormData {
     email: String,
 }
 
-pub async fn example_post(form: web::Form<PostFormData>, pool: web::Data<PgPool>) -> HttpResponse {
+pub async fn example_post(
+    form: web::Form<PostFormData>,
+    pool: web::Data<PgPool>,
+) -> HttpResponse {
     let request_id = Uuid::new_v4();
     let request_span = tracing::info_span!(
         "Processing new POST request",
