@@ -1,24 +1,30 @@
-use crate::telemetry::init_request_trace;
 use actix_web::{web, HttpResponse};
 use chrono::Utc;
 use sqlx::PgPool;
-use tracing::Instrument;
 use uuid::Uuid;
 
 #[derive(serde::Deserialize)]
 pub struct PostFormData {
-    name: String,
-    email: String,
+    pub name: String,
+    pub email: String,
 }
 
 pub async fn example_post(
     form: web::Form<PostFormData>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
-    init_request_trace!("Processing new POST request", %form.name, %form.email);
-    let query_span = tracing::info_span!("Writing new data to database");
+    match write_db(&form, &pool).await {
+        Ok(_) => HttpResponse::Ok().finish(),
+        Err(_) => HttpResponse::InternalServerError().finish(),
+    }
+}
 
-    match sqlx::query!(
+#[tracing::instrument(name = "Writing new data to database", skip(form, pool))]
+async fn write_db(
+    form: &PostFormData,
+    pool: &PgPool,
+) -> Result<(), sqlx::Error> {
+    sqlx::query!(
         r#"
         INSERT INTO example (id, email, name, added_at)
         VALUES ($1, $2, $3, $4)
@@ -28,14 +34,11 @@ pub async fn example_post(
         form.name,
         Utc::now(),
     )
-    .execute(pool.get_ref())
-    .instrument(query_span)
+    .execute(pool)
     .await
-    {
-        Ok(_) => HttpResponse::Ok().finish(),
-        Err(e) => {
-            tracing::error!("Failed to execute query: {:?}", e);
-            HttpResponse::InternalServerError().finish()
-        }
-    }
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+    Ok(())
 }

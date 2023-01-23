@@ -1,7 +1,5 @@
-use crate::telemetry::init_request_trace;
 use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
-use tracing::Instrument;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ExampleGetResponse {
@@ -9,28 +7,17 @@ pub struct ExampleGetResponse {
     pub name: String,
 }
 
+struct Record {
+    name: String,
+    email: String,
+}
+
 /// Get the data associated with an email address, or return 400
 pub async fn example_get(
     email: web::Path<String>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
-    init_request_trace!("Processing new GET request", %email);
-    let query_span = tracing::info_span!("Querying data from database");
-
-    let email = email.to_string();
-    let entry = sqlx::query!(
-        r#"
-        SELECT *
-        FROM example
-        WHERE email = $1
-        "#,
-        &email
-    )
-    .fetch_optional(pool.get_ref())
-    .instrument(query_span)
-    .await;
-
-    match entry {
+    match read_db(&email, &pool).await {
         Ok(response) => match response {
             None => HttpResponse::NotFound().finish(),
             Some(record) => HttpResponse::Ok().json(ExampleGetResponse {
@@ -43,4 +30,33 @@ pub async fn example_get(
             HttpResponse::InternalServerError().finish()
         }
     }
+}
+
+#[tracing::instrument(name = "Writing new data to database", skip(email, pool))]
+async fn read_db(
+    email: &String,
+    pool: &PgPool,
+) -> Result<Option<Record>, sqlx::Error> {
+    let record = sqlx::query!(
+        r#"
+        SELECT *
+        FROM example
+        WHERE email = $1
+        "#,
+        &email
+    )
+    .fetch_optional(pool)
+    .await
+    .map_err(|e| {
+        tracing::error!("Failed to execute query: {:?}", e);
+        e
+    })?;
+
+    Ok(match record {
+        Some(r) => Some(Record {
+            email: r.email,
+            name: r.name,
+        }),
+        None => None,
+    })
 }

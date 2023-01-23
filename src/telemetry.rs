@@ -69,4 +69,3 @@ macro_rules! init_request_trace {
         let _request_span_guard = request_span.enter();
     };
 }
-pub(crate) use init_request_trace;
