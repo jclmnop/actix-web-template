@@ -2,9 +2,9 @@ use actix_web_template::configuration::{DatabaseSettings, Settings};
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
+use secrecy::ExposeSecret;
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
-use secrecy::ExposeSecret;
 use uuid::Uuid;
 
 const TEST_HOST: &str = "127.0.0.1";
@@ -67,10 +67,11 @@ pub async fn spawn_app() -> TestApp {
 }
 
 async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
-    let mut connection =
-        PgConnection::connect(db_config.connection_string_without_db().expose_secret())
-            .await
-            .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect(
+        db_config.connection_string_without_db().expose_secret(),
+    )
+    .await
+    .expect("Failed to connect to Postgres");
 
     connection
         .execute(
@@ -80,9 +81,10 @@ async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
         .await
         .expect("Failed to create database");
 
-    let db_pool = PgPool::connect(db_config.connection_string().expose_secret())
-        .await
-        .expect("Failed to connect to newly created database.");
+    let db_pool =
+        PgPool::connect(db_config.connection_string().expose_secret())
+            .await
+            .expect("Failed to connect to newly created database.");
 
     sqlx::migrate!("./migrations")
         .run(&db_pool)
