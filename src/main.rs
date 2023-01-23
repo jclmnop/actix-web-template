@@ -1,6 +1,7 @@
 use actix_web_template::configuration::Settings;
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
+use secrecy::ExposeSecret;
 use sqlx::PgPool;
 use std::net::TcpListener;
 
@@ -17,9 +18,11 @@ async fn main() -> std::io::Result<()> {
     init_subscriber(subscriber);
 
     let configuration = Settings::get_config().expect("Failed to load config");
-    let db_pool = PgPool::connect(&configuration.database.connection_string())
-        .await
-        .expect("Failed to connect to postgres");
+    let db_pool = PgPool::connect(
+        configuration.database.connection_string().expose_secret(),
+    )
+    .await
+    .expect("Failed to connect to postgres");
     let listener = TcpListener::bind(configuration.get_address())?;
     run(listener, db_pool)?.await
 }

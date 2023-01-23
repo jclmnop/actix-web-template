@@ -1,3 +1,5 @@
+use secrecy::{ExposeSecret, Secret};
+
 const CONFIG_FILE: &str = "config.yaml";
 const CONFIG_FORMAT: config::FileFormat = config::FileFormat::Yaml;
 
@@ -27,7 +29,7 @@ impl Settings {
 #[derive(serde::Deserialize)]
 pub struct DatabaseSettings {
     pub username: String,
-    pub password: String,
+    pub password: Secret<String>,
     pub port: u16,
     pub host: String,
     pub database_name: String,
@@ -35,23 +37,23 @@ pub struct DatabaseSettings {
 
 impl DatabaseSettings {
     /// Connection string for database
-    pub fn connection_string(&self) -> String {
+    pub fn connection_string(&self) -> Secret<String> {
         let host = &self.host;
         let port = self.port;
         let username = &self.username;
-        let password = &self.password;
+        let password = &self.password.expose_secret();
         let database_name = &self.database_name;
-        format!(
+        Secret::new(format!(
             "postgres://{username}:{password}@{host}:{port}/{database_name}"
-        )
+        ))
     }
 
     /// Connection string for top level Postgres instance
-    pub fn connection_string_without_db(&self) -> String {
+    pub fn connection_string_without_db(&self) -> Secret<String> {
         let host = &self.host;
         let port = self.port;
         let username = &self.username;
-        let password = &self.password;
-        format!("postgres://{username}:{password}@{host}:{port}")
+        let password = &self.password.expose_secret();
+        Secret::new(format!("postgres://{username}:{password}@{host}:{port}"))
     }
 }
