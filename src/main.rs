@@ -11,6 +11,7 @@ const DEFAULT_LOG_LEVEL: &str = "info";
 async fn main() -> std::io::Result<()> {
     let subscriber = get_subscriber(APP_NAME.into(), DEFAULT_LOG_LEVEL.into());
     init_subscriber(subscriber);
+
     let configuration = Settings::get_config().expect("Failed to load config");
     let db_pool = PgPool::connect(&configuration.database.connection_string())
         .await

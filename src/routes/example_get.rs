@@ -1,5 +1,7 @@
+use crate::telemetry::init_request_trace;
 use actix_web::{web, HttpResponse};
 use sqlx::PgPool;
+use tracing::Instrument;
 
 #[derive(serde::Serialize, serde::Deserialize)]
 pub struct ExampleGetResponse {
@@ -12,6 +14,9 @@ pub async fn example_get(
     email: web::Path<String>,
     pool: web::Data<PgPool>,
 ) -> HttpResponse {
+    init_request_trace!("Processing new GET request", %email);
+    let query_span = tracing::info_span!("Querying data from database");
+
     let email = email.to_string();
     let entry = sqlx::query!(
         r#"
@@ -22,6 +27,7 @@ pub async fn example_get(
         &email
     )
     .fetch_optional(pool.get_ref())
+    .instrument(query_span)
     .await;
 
     match entry {
@@ -33,7 +39,7 @@ pub async fn example_get(
             }),
         },
         Err(e) => {
-            println!("{}", e);
+            tracing::error!("Failed to execute query: {:?}", e);
             HttpResponse::InternalServerError().finish()
         }
     }
