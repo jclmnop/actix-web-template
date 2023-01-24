@@ -1,10 +1,10 @@
-use crate::domain::util::{ParseError, Parseable};
+use crate::domain::parse::{ParseError, Parseable};
 use validator::validate_email;
 
 #[derive(Debug)]
 pub struct Email(String);
 
-impl Parseable for Email {
+impl Parseable<String> for Email {
     fn parse(s: String) -> Result<Self, ParseError> {
         if validate_email(&s) {
             Ok(Self(s))
@@ -30,7 +30,7 @@ impl std::fmt::Display for Email {
 mod tests {
     use super::Email;
     use super::Parseable;
-    use claims::{assert_err};
+    use claims::assert_err;
     use fake::faker::internet::en::SafeEmail;
     use fake::Fake;
 
@@ -64,7 +64,9 @@ mod tests {
     }
 
     #[quickcheck_macros::quickcheck]
-    fn valid_emails_parsed_successfully(valid_email: ValidEmailFixture) -> bool {
+    fn valid_emails_parsed_successfully(
+        valid_email: ValidEmailFixture,
+    ) -> bool {
         Email::parse(valid_email.0).is_ok()
     }
 }

@@ -1,8 +1,8 @@
-pub trait Parseable
+pub trait Parseable<T>
 where
     Self: Sized,
 {
-    fn parse(s: String) -> Result<Self, ParseError>;
+    fn parse(input: T) -> Result<Self, ParseError>;
 }
 
 #[derive(thiserror::Error, Debug)]

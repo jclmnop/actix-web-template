@@ -1,6 +1,6 @@
-use crate::domain::util::{ParseError, Parseable};
-use unicode_segmentation::UnicodeSegmentation;
+use crate::domain::parse::{ParseError, Parseable};
 use itertools::Itertools;
+use unicode_segmentation::UnicodeSegmentation;
 
 const MAX_LENGTH: usize = 256;
 const FORBIDDEN_CHARS: [char; 10] =
@@ -9,7 +9,7 @@ const FORBIDDEN_CHARS: [char; 10] =
 #[derive(Debug)]
 pub struct Name(String);
 
-impl Parseable for Name {
+impl Parseable<String> for Name {
     fn parse(s: String) -> Result<Self, ParseError> {
         let is_empty = s.trim().is_empty();
         let is_too_long = s.graphemes(true).count() > MAX_LENGTH;
@@ -25,7 +25,10 @@ impl Parseable for Name {
         } else if is_too_long {
             Err(ParseError::TooLong(MAX_LENGTH))
         } else if contains_forbidden_chars {
-            Err(ParseError::ContainsInvalidChars(format!("{:?}", forbidden_chars)))
+            Err(ParseError::ContainsInvalidChars(format!(
+                "{:?}",
+                forbidden_chars
+            )))
         } else {
             Ok(Self(s))
         }
@@ -46,8 +49,8 @@ impl std::fmt::Display for Name {
 
 #[cfg(test)]
 mod tests {
-    use claims::{assert_err, assert_ok};
     use super::*;
+    use claims::{assert_err, assert_ok};
 
     #[test]
     fn long_name_is_invalid() {
