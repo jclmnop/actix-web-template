@@ -3,6 +3,19 @@ use chrono::Utc;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+//TODO:
+//  - validate email/name with domain stuff
+//      - PostExampleData { name: PostName, email: PostEmail }
+//      - PostName::parse(name: String) -> Result<Self, anyhow::Error>
+//      - PostEmail::parse(email: String) -> Result<Self, anyhow::Error>
+//  - ExamplePostError
+//      - ValidationError
+//      - DatabaseError
+//  - error chaining?
+//  - impl ResponseError for ExamplePostError
+//  - Result<HttpResponse, ExamplePostError>
+//  - anyhow::Error
+
 #[derive(serde::Deserialize)]
 pub struct PostFormData {
     pub name: String,
