@@ -20,7 +20,7 @@ pub struct PostExampleForm {
 #[derive(thiserror::Error, Debug)]
 pub enum PostError {
     #[error(transparent)]
-    InputValidationError(ParseError),
+    InputValidationError(#[from] ParseError),
     #[error(transparent)]
     UnexpectedError(#[from] anyhow::Error),
 }
