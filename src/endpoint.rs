@@ -1,5 +1,6 @@
+use crate::routes::PostError;
 use crate::{init_request_trace, routes};
-use actix_web::{get, post, web, Responder};
+use actix_web::{get, post, web, HttpResponse, Responder};
 use proc_macros::add_path_const;
 use sqlx::PgPool;
 
@@ -18,9 +19,9 @@ pub async fn example_get(
 #[add_path_const]
 #[post("/example_post")]
 pub async fn example_post(
-    form: web::Form<routes::PostFormData>,
+    form: web::Form<routes::PostExampleForm>,
     pool: web::Data<PgPool>,
-) -> impl Responder {
+) -> Result<HttpResponse, PostError> {
     init_request_trace!("Processing new POST request", %form.name, %form.email);
     routes::example_post(form, pool).await
 }
