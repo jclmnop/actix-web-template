@@ -1,7 +1,7 @@
 use crate::domain::Parseable;
 use crate::domain::{self, ParseError, PostData};
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, ResponseError};
+use crate::routes::PostError;
+use actix_web::{web, HttpResponse};
 use anyhow::Context;
 use chrono::Utc;
 use sqlx::PgPool;
@@ -9,20 +9,11 @@ use uuid::Uuid;
 
 //TODO:
 //  - error chaining?
-//  - Same for GET
 
 #[derive(serde::Deserialize)]
 pub struct PostExampleForm {
     pub name: String,
     pub email: String,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum PostError {
-    #[error(transparent)]
-    InputValidationError(#[from] ParseError),
-    #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error),
 }
 
 pub async fn example_post(
@@ -63,14 +54,5 @@ impl TryFrom<PostExampleForm> for PostData {
         let name = domain::Name::parse(value.name)?;
         let email = domain::Email::parse(value.email)?;
         Ok(PostData { name, email })
-    }
-}
-
-impl ResponseError for PostError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            PostError::InputValidationError(_) => StatusCode::BAD_REQUEST,
-            PostError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }
     }
 }

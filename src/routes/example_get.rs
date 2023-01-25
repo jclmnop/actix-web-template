@@ -1,6 +1,6 @@
-use crate::domain::{Email, ParseError, Parseable};
-use actix_web::http::StatusCode;
-use actix_web::{web, HttpResponse, ResponseError};
+use crate::domain::{Email, Parseable};
+use crate::routes::GetError;
+use actix_web::{web, HttpResponse};
 use anyhow::Context;
 use sqlx::PgPool;
 
@@ -13,16 +13,6 @@ pub struct ExampleGetResponse {
 struct Record {
     name: String,
     email: String,
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum GetError {
-    #[error("Invalid email.")]
-    InvalidEmail(#[from] ParseError),
-    #[error("{0} not found.")]
-    EmailNotFound(String),
-    #[error(transparent)]
-    UnexpectedError(#[from] anyhow::Error),
 }
 
 /// Get the data associated with an email address, or return 400
@@ -43,7 +33,7 @@ pub async fn example_get(
     }
 }
 
-#[tracing::instrument(name = "Writing new data to database", skip(email, pool))]
+#[tracing::instrument(name = "Reading data from database", skip(email, pool))]
 async fn read_db(
     email: &Email,
     pool: &PgPool,
@@ -66,14 +56,4 @@ async fn read_db(
         }),
         None => None,
     })
-}
-
-impl ResponseError for GetError {
-    fn status_code(&self) -> StatusCode {
-        match self {
-            GetError::InvalidEmail(_) => StatusCode::BAD_REQUEST,
-            GetError::EmailNotFound(_) => StatusCode::NOT_FOUND,
-            GetError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        }
-    }
 }
