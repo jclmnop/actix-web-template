@@ -57,11 +57,7 @@ async fn read_db(
         &email.as_ref()
     )
     .fetch_optional(pool)
-    .await
-    .map_err(|e| {
-        tracing::error!("Failed to execute query: {:?}", e);
-        e
-    })?;
+    .await?;
 
     Ok(match record {
         Some(r) => Some(Record {
