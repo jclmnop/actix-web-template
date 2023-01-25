@@ -171,8 +171,8 @@ async fn example_get_returns_404_for_nonexistant_data() {
 }
 
 #[tokio::test]
-async fn example_get_returns_404_for_basic_injection() {
-    const BAD_EMAIL: &str = "barry_bazza@barry.com OR 1=1;";
+async fn example_get_returns_400_for_basic_injection() {
+    const BAD_EMAIL: &str = "'' OR 1=1;";
     const NAME: &str = "barry barryfield";
     const EMAIL: &str = "barry_bazza@barry.com";
     let bad_email: String = urlencoding::encode(BAD_EMAIL).into_owned();
@@ -212,5 +212,5 @@ async fn example_get_returns_404_for_basic_injection() {
         .await
         .expect("GET request failed");
 
-    assert_eq!(404, bad_request_response.status().as_u16());
+    assert_eq!(400, bad_request_response.status().as_u16());
 }
