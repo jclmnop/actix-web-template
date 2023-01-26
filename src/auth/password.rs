@@ -10,7 +10,7 @@ use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
 use std::string::ToString;
 
-// TODO: unit tests for compute_password_hash() and verify_password_hash()
+// TODO: unit tests for verify_password_hash()
 // TODO: integration tests for validate_credentials()
 
 pub struct Credentials {
@@ -79,13 +79,15 @@ fn verify_password_hash(
     let expected_password_hash =
         PasswordHash::new(expected_password_hash.expose_secret())
             .context("Failed to parse PHC string from stored password hash.")?;
+
     Argon2::default()
         .verify_password(
             received_password.expose_secret().as_bytes(),
             &expected_password_hash,
         )
         .context("Invalid password")
-        .map_err(AuthError::InvalidCredentials)
+        .map_err(AuthError::InvalidCredentials)?;
+    Ok(())
 }
 
 fn compute_password_hash(
@@ -102,4 +104,51 @@ fn compute_password_hash(
     .context("Failed to hash password")?
     .to_string();
     Ok(Secret::new(password_hash))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use claims::{assert_err, assert_ok};
+
+    #[test]
+    fn incorrect_password_does_not_verify() {
+        let expected_password = Secret::new("password".to_string());
+        let expected_password_hash = compute_password_hash(expected_password)
+            .expect("Failed to hash expected password.");
+
+        let received_password = Secret::new("pissword".to_string());
+        let received_password_hash = compute_password_hash(received_password)
+            .expect("Failed to hash received password.");
+
+        assert_err!(verify_password_hash(
+            expected_password_hash,
+            received_password_hash
+        ));
+    }
+
+    #[test]
+    fn same_hash_does_verify() {
+        // let expected_password = Secret::new("password".to_string());
+        // let expected_password_hash = compute_password_hash(expected_password.clone())
+        //     .expect("Failed to hash expected password.");
+        let expected_password_hash = Secret::new(
+            "$argon2id$v=19$m=15000,t=2,p=1$\
+            gZiV/M1gPc22ElAH/Jh1Hw$\
+            CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
+                .to_string(),
+        );
+
+        let received_password_hash = Secret::new(
+            "$argon2id$v=19$m=15000,t=2,p=1$\
+            gZiV/M1gPc22ElAH/Jh1Hw$\
+            CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
+                .to_string(),
+        );
+
+        assert_ok!(verify_password_hash(
+            expected_password_hash,
+            received_password_hash
+        ));
+    }
 }
