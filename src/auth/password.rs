@@ -118,37 +118,19 @@ mod tests {
             .expect("Failed to hash expected password.");
 
         let received_password = Secret::new("pissword".to_string());
-        let received_password_hash = compute_password_hash(received_password)
-            .expect("Failed to hash received password.");
 
         assert_err!(verify_password_hash(
             expected_password_hash,
-            received_password_hash
+            received_password
         ));
     }
 
     #[test]
-    fn same_hash_does_verify() {
-        // let expected_password = Secret::new("password".to_string());
-        // let expected_password_hash = compute_password_hash(expected_password.clone())
-        //     .expect("Failed to hash expected password.");
-        let expected_password_hash = Secret::new(
-            "$argon2id$v=19$m=15000,t=2,p=1$\
-            gZiV/M1gPc22ElAH/Jh1Hw$\
-            CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
-                .to_string(),
-        );
+    fn correct_password_does_verify() {
+        let password = Secret::new("password".to_string());
+        let expected_password_hash = compute_password_hash(password.clone())
+            .expect("Failed to hash expected password");
 
-        let received_password_hash = Secret::new(
-            "$argon2id$v=19$m=15000,t=2,p=1$\
-            gZiV/M1gPc22ElAH/Jh1Hw$\
-            CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
-                .to_string(),
-        );
-
-        assert_ok!(verify_password_hash(
-            expected_password_hash,
-            received_password_hash
-        ));
+        assert_ok!(verify_password_hash(expected_password_hash, password));
     }
 }
