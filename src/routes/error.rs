@@ -1,6 +1,8 @@
 use crate::domain::ParseError;
+use actix_web::http::header::HeaderValue;
 use actix_web::http::StatusCode;
-use actix_web::ResponseError;
+use actix_web::{HttpResponse, ResponseError};
+use anyhow::anyhow;
 
 //TODO: must be a way to remove duplicate code re: `impl std::fmt::Debug`,
 //      maybe a Derive(ErrorChain) macro?
@@ -65,8 +67,31 @@ impl std::fmt::Debug for PostError {
 impl ResponseError for AuthError {
     fn status_code(&self) -> StatusCode {
         match self {
-            AuthError::InvalidCredentials(_) => StatusCode::FORBIDDEN,
+            AuthError::InvalidCredentials(_) => StatusCode::UNAUTHORIZED,
             AuthError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        }
+    }
+
+    fn error_response(&self) -> HttpResponse {
+        let mut response = HttpResponse::new(self.status_code());
+        match self {
+            AuthError::InvalidCredentials(_) => {
+                let header_value =
+                    HeaderValue::from_str(r#"Basic realm="publish""#)
+                        .map_err(|e| {
+                            return AuthError::UnexpectedError(anyhow!(
+                                "Failed to parse auth header for response: {e}"
+                            ))
+                            .error_response();
+                        })
+                        .unwrap();
+                response.headers_mut().insert(
+                    actix_web::http::header::WWW_AUTHENTICATE,
+                    header_value,
+                );
+                response
+            }
+            _ => response,
         }
     }
 }

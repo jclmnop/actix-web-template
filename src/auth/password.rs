@@ -1,3 +1,4 @@
+use crate::domain::Credentials;
 use crate::routes::AuthError;
 use crate::telemetry::spawn_blocking_with_tracing;
 use anyhow::Context;
@@ -13,9 +14,9 @@ use std::string::ToString;
 // TODO: unit tests for verify_password_hash()
 // TODO: integration tests for validate_credentials()
 
-pub struct Credentials {
-    pub username: String,
-    pub password: Secret<String>,
+struct StoredCredentials {
+    pub stored_username: String,
+    pub stored_password_hash: Secret<String>,
 }
 
 #[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
@@ -28,14 +29,14 @@ pub async fn validate_credentials(
         compute_password_hash(Secret::new("password".to_string()))
             .context("Failed to hash default password")?;
     if let Some(stored_credentials) =
-        get_stored_credentials(&credentials.username, pool).await?
+        get_stored_credentials(credentials.username.as_ref(), pool).await?
     {
-        username = Some(stored_credentials.username);
-        stored_hash = stored_credentials.password;
+        username = Some(stored_credentials.stored_username);
+        stored_hash = stored_credentials.stored_password_hash;
     }
 
     spawn_blocking_with_tracing(move || {
-        verify_password_hash(stored_hash, credentials.password)
+        verify_password_hash(stored_hash, credentials.password.as_ref())
     })
     .await
     .context("Failed to spawn blocking task")??;
@@ -49,7 +50,7 @@ pub async fn validate_credentials(
 async fn get_stored_credentials(
     username: &str,
     pool: &PgPool,
-) -> Result<Option<Credentials>, anyhow::Error> {
+) -> Result<Option<StoredCredentials>, anyhow::Error> {
     let credentials = sqlx::query!(
         r#"
         SELECT username, password
@@ -61,9 +62,9 @@ async fn get_stored_credentials(
     .fetch_optional(pool)
     .await
     .context("Failed to query database for credentials")?
-    .map(|row| Credentials {
-        username: username.to_string(),
-        password: Secret::new(row.password),
+    .map(|row| StoredCredentials {
+        stored_username: username.to_string(),
+        stored_password_hash: Secret::new(row.password),
     });
     Ok(credentials)
 }
@@ -74,7 +75,7 @@ async fn get_stored_credentials(
 )]
 fn verify_password_hash(
     expected_password_hash: Secret<String>,
-    received_password: Secret<String>,
+    received_password: &Secret<String>,
 ) -> Result<(), AuthError> {
     let expected_password_hash =
         PasswordHash::new(expected_password_hash.expose_secret())
@@ -94,6 +95,7 @@ fn compute_password_hash(
     password: Secret<String>,
 ) -> Result<Secret<String>, AuthError> {
     let salt = SaltString::generate(&mut rand::thread_rng());
+    //TODO: replace fields with config inputs
     let password_hash = Argon2::new(
         Algorithm::Argon2id,
         Version::V0x13,
@@ -121,7 +123,7 @@ mod tests {
 
         assert_err!(verify_password_hash(
             expected_password_hash,
-            received_password
+            &received_password
         ));
     }
 
@@ -131,6 +133,6 @@ mod tests {
         let expected_password_hash = compute_password_hash(password.clone())
             .expect("Failed to hash expected password");
 
-        assert_ok!(verify_password_hash(expected_password_hash, password));
+        assert_ok!(verify_password_hash(expected_password_hash, &password));
     }
 }
