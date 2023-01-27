@@ -26,8 +26,7 @@ impl Parseable<String> for Name {
             Err(ParseError::TooLong(MAX_LENGTH))
         } else if contains_forbidden_chars {
             Err(ParseError::ContainsInvalidChars(format!(
-                "{:?}",
-                forbidden_chars
+                "{forbidden_chars:?}"
             )))
         } else {
             Ok(Self(s))

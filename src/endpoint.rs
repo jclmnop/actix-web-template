@@ -1,6 +1,7 @@
-use crate::routes::PostError;
+use crate::auth::validate_request_auth;
+use crate::routes::{AuthError, PostError};
 use crate::{init_request_trace, routes};
-use actix_web::{get, post, web, HttpResponse, Responder};
+use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
 use proc_macros::add_path_const;
 use sqlx::PgPool;
 
@@ -32,4 +33,16 @@ pub async fn example_post(
 pub async fn health_check() -> impl Responder {
     init_request_trace!("Health check");
     routes::health_check().await
+}
+
+/// Response 200 if 'Basic' authorisation credentials are valid
+#[add_path_const]
+#[get("/example_auth")]
+pub async fn example_auth(
+    request: HttpRequest,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AuthError> {
+    init_request_trace!("Validate Basic credentials");
+    validate_request_auth(request, &pool).await?;
+    Ok(HttpResponse::Ok().finish())
 }
