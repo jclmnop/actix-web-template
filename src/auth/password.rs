@@ -1,6 +1,7 @@
 use crate::domain::Credentials;
 use crate::routes::AuthError;
 use crate::telemetry::spawn_blocking_with_tracing;
+use actix_web::HttpRequest;
 use anyhow::Context;
 use argon2::password_hash::SaltString;
 use argon2::{
@@ -19,6 +20,18 @@ struct StoredCredentials {
     pub stored_password_hash: Secret<String>,
 }
 
+#[tracing::instrument(name = "Validate request", skip(request, pool))]
+pub async fn validate_request_auth(
+    request: HttpRequest,
+    pool: &PgPool,
+) -> Result<(), AuthError> {
+    let credentials = Credentials::decode_from_basic_authentication_header(
+        request.headers(),
+    )?;
+    let _ = validate_credentials(credentials, pool).await?;
+    Ok(())
+}
+
 #[tracing::instrument(name = "Validate credentials", skip(credentials, pool))]
 pub async fn validate_credentials(
     credentials: Credentials,
@@ -29,10 +42,9 @@ pub async fn validate_credentials(
         "$argon2id$v=19$m=15000,t=2,p=1$\
         gZiV/M1gPc22ElAH/Jh1Hw$\
         CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
-            .to_string()
+            .to_string(),
     );
-        // compute_password_hash(Secret::new("password".to_string()))
-        //     .context("Failed to hash default password")?;
+
     if let Some(stored_credentials) =
         get_stored_credentials(credentials.username.as_ref(), pool).await?
     {
@@ -91,13 +103,13 @@ fn verify_password_hash(
             received_password.expose_secret().as_bytes(),
             &expected_password_hash,
         )
-        .context("Invalid password")
+        .context("Invalid password!")
         .map_err(AuthError::InvalidCredentials)?;
     Ok(())
 }
 
 #[allow(dead_code)]
-fn compute_password_hash(
+pub fn compute_password_hash(
     password: Secret<String>,
 ) -> Result<Secret<String>, AuthError> {
     let salt = SaltString::generate(&mut rand::thread_rng());

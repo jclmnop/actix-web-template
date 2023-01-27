@@ -1,4 +1,4 @@
-use crate::endpoint::{example_get, example_post, health_check};
+use crate::endpoint::{example_auth, example_get, example_post, health_check};
 use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
@@ -19,6 +19,7 @@ pub fn run(
             .service(health_check)
             .service(example_get)
             .service(example_post)
+            .service(example_auth)
             .app_data(connection_pool.clone())
     })
     .listen(listener)?

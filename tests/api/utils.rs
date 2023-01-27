@@ -1,8 +1,9 @@
+use actix_web_template::auth::compute_password_hash;
 use actix_web_template::configuration::{DatabaseSettings, Settings};
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
-use secrecy::ExposeSecret;
+use secrecy::{ExposeSecret, Secret};
 use sqlx::{Connection, Executor, PgConnection, PgPool};
 use std::net::TcpListener;
 use uuid::Uuid;
@@ -34,6 +35,7 @@ static TRACING: Lazy<()> = Lazy::new(|| {
 pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
+    pub test_user: TestUser,
 }
 
 /// Spawn an instance of the app using a random available port and return the
@@ -63,7 +65,14 @@ pub async fn spawn_app() -> TestApp {
         run(listener, db_pool.clone()).expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
-    TestApp { address, db_pool }
+    let test_app = TestApp {
+        address,
+        db_pool,
+        test_user: TestUser::generate(),
+    };
+    test_app.test_user.store(&test_app.db_pool).await;
+
+    test_app
 }
 
 async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
@@ -92,4 +101,38 @@ async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
         .expect("Failed to migrate newly created database");
 
     db_pool
+}
+
+pub struct TestUser {
+    pub username: String,
+    pub password: String,
+}
+
+impl TestUser {
+    pub fn generate() -> Self {
+        Self {
+            username: Uuid::new_v4().to_string(),
+            password: Uuid::new_v4().to_string(),
+        }
+    }
+
+    pub async fn store(&self, pool: &PgPool) {
+        let password = self.password.clone();
+        let password_hash = actix_web::rt::task::spawn_blocking(move || {
+            compute_password_hash(Secret::new(password))
+        })
+        .await
+        .unwrap()
+        .unwrap();
+
+        sqlx::query!(
+            "INSERT INTO users (username, password)\
+            VALUES ($1, $2)",
+            self.username,
+            password_hash.expose_secret()
+        )
+        .execute(pool)
+        .await
+        .expect("Failed to store test user");
+    }
 }
