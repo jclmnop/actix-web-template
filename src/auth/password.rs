@@ -25,9 +25,14 @@ pub async fn validate_credentials(
     pool: &PgPool,
 ) -> Result<String, AuthError> {
     let mut username: Option<String> = None;
-    let mut stored_hash =
-        compute_password_hash(Secret::new("password".to_string()))
-            .context("Failed to hash default password")?;
+    let mut stored_hash = Secret::new(
+        "$argon2id$v=19$m=15000,t=2,p=1$\
+        gZiV/M1gPc22ElAH/Jh1Hw$\
+        CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
+            .to_string()
+    );
+        // compute_password_hash(Secret::new("password".to_string()))
+        //     .context("Failed to hash default password")?;
     if let Some(stored_credentials) =
         get_stored_credentials(credentials.username.as_ref(), pool).await?
     {
@@ -91,6 +96,7 @@ fn verify_password_hash(
     Ok(())
 }
 
+#[allow(dead_code)]
 fn compute_password_hash(
     password: Secret<String>,
 ) -> Result<Secret<String>, AuthError> {
