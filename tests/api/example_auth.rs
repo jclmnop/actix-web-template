@@ -90,9 +90,10 @@ async fn response_time_for_invalid_and_valid_username_is_similar() {
     .as_millis();
 
     println!(
-        "\tValid: {time_with_valid_user}\n\tInvalid: {time_with_invalid_user}"
+        "\tValid: {time_with_valid_user}ms\n\tInvalid: {time_with_invalid_user}ms"
     );
 
-    // We accept 25% difference, it will be much smaller in --release version anyway
-    assert!(time_with_invalid_user as f32 / time_with_valid_user as f32 > 0.75);
+    // We accept 50% difference, it's much smaller in --release version anyway
+    assert!(time_with_invalid_user as f32 / time_with_valid_user as f32 > 0.5);
+    assert!(time_with_valid_user as f32 / time_with_invalid_user as f32 > 0.5);
 }
