@@ -22,7 +22,7 @@ async fn success_for_valid_credentials() {
 }
 
 #[tokio::test]
-async fn unathorised_for_invalid_password() {
+async fn unauthorised_for_invalid_password() {
     let test_app = spawn_app().await;
     let client = reqwest::Client::new();
     let address = test_app.address;
@@ -38,7 +38,7 @@ async fn unathorised_for_invalid_password() {
 }
 
 #[tokio::test]
-async fn unathorised_for_invalid_username() {
+async fn unauthorised_for_invalid_username() {
     let test_app = spawn_app().await;
     let client = reqwest::Client::new();
     let address = test_app.address;
@@ -51,4 +51,48 @@ async fn unathorised_for_invalid_username() {
         .expect("Failed to execute request");
 
     assert_eq!(StatusCode::UNAUTHORIZED, auth_response.status());
+}
+
+macro_rules! timeit {
+    ($code:block) => {{
+        let now = ::std::time::Instant::now();
+        $code
+        let elapsed = now.elapsed();
+        elapsed
+    }};
+}
+
+// Check that user enumeration can't be performed with timing attacks
+#[tokio::test]
+async fn response_time_for_invalid_and_valid_username_is_similar() {
+    let test_app = spawn_app().await;
+    let client = reqwest::Client::new();
+    let address = test_app.address;
+
+    let time_with_valid_user = timeit!({
+        client
+            .get(format!("{address}{}", example_auth::PATH))
+            .basic_auth(&test_app.test_user.username, Some("invalid_password"))
+            .send()
+            .await
+            .expect("Failed to execute request");
+    })
+    .as_millis();
+
+    let time_with_invalid_user = timeit!({
+        client
+            .get(format!("{address}{}", example_auth::PATH))
+            .basic_auth("bob", Some("invalid_password"))
+            .send()
+            .await
+            .expect("Failed to execute request");
+    })
+    .as_millis();
+
+    println!(
+        "\tValid: {time_with_valid_user}\n\tInvalid: {time_with_invalid_user}"
+    );
+
+    // We accept 25% difference, it will be much smaller in --release version anyway
+    assert!(time_with_invalid_user as f32 / time_with_valid_user as f32 > 0.75);
 }

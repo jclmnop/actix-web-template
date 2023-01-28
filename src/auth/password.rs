@@ -12,9 +12,6 @@ use secrecy::{ExposeSecret, Secret};
 use sqlx::PgPool;
 use std::string::ToString;
 
-// TODO: unit tests for verify_password_hash()
-// TODO: integration tests for validate_credentials()
-
 struct StoredCredentials {
     pub stored_username: String,
     pub stored_password_hash: Secret<String>,
@@ -38,18 +35,16 @@ pub async fn validate_credentials(
     pool: &PgPool,
 ) -> Result<String, AuthError> {
     let mut username: Option<String> = None;
-    let mut stored_hash = Secret::new(
-        "$argon2id$v=19$m=15000,t=2,p=1$\
-        gZiV/M1gPc22ElAH/Jh1Hw$\
-        CWOrkoo7oJBQ/iyh7uJ0LO2aLEfrHwTWllSAxT0zRno"
-            .to_string(),
-    );
+    let stored_hash: Secret<String>;
 
     if let Some(stored_credentials) =
         get_stored_credentials(credentials.username.as_ref(), pool).await?
     {
         username = Some(stored_credentials.stored_username);
         stored_hash = stored_credentials.stored_password_hash;
+    } else {
+        stored_hash =
+            compute_password_hash(Secret::new("default_password".to_string()))?;
     }
 
     spawn_blocking_with_tracing(move || {
@@ -108,7 +103,6 @@ fn verify_password_hash(
     Ok(())
 }
 
-#[allow(dead_code)]
 pub fn compute_password_hash(
     password: Secret<String>,
 ) -> Result<Secret<String>, AuthError> {
