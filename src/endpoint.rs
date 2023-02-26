@@ -46,3 +46,27 @@ pub async fn example_auth(
     validate_request_auth(request, &pool).await?;
     Ok(HttpResponse::Ok().finish())
 }
+
+#[add_path_const]
+#[get("/home")]
+pub async fn home() -> HttpResponse {
+    init_request_trace!("Home Page");
+    routes::home().await
+}
+
+#[add_path_const]
+#[get("/login")]
+pub async fn login_form() -> HttpResponse {
+    init_request_trace!("Get login form");
+    routes::login::login_form().await
+}
+
+#[add_path_const]
+#[post("/login")]
+pub async fn login(
+    form: web::Form<routes::login::FormData>,
+    pool: web::Data<PgPool>,
+) -> Result<HttpResponse, AuthError> {
+    init_request_trace!("Login Attempt", %form.username);
+    routes::login::login(form, pool).await
+}
