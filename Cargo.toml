@@ -39,6 +39,7 @@ validator = "0.16.0"
 argon2 = { version = "0.4.1", features = ["std"] }
 rand = "0.8.5"
 base64 = "0.21.0"
+urlencoding = "2.1.2"
 
 [dev-dependencies]
 reqwest = "0.11.13"

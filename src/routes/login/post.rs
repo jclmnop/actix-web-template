@@ -22,10 +22,12 @@ pub async fn login(
 ) -> Result<HttpResponse, AuthError> {
     //TODO: better error handling?
     let credentials = Credentials {
-        username: Username::parse(form.0.username)
-            .map_err(|e| AuthError::InvalidCredentials(anyhow::Error::new(e)))?,
-        password: Password::parse(form.0.password)
-            .map_err(|e| AuthError::InvalidCredentials(anyhow::Error::new(e)))?,
+        username: Username::parse(form.0.username).map_err(|e| {
+            AuthError::InvalidCredentials(anyhow::Error::new(e))
+        })?,
+        password: Password::parse(form.0.password).map_err(|e| {
+            AuthError::InvalidCredentials(anyhow::Error::new(e))
+        })?,
     };
     match validate_credentials(credentials, &pool).await {
         Ok(_) => Ok(HttpResponse::SeeOther()
