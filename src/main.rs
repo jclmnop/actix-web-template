@@ -1,4 +1,4 @@
-use actix_web_template::configuration::Settings;
+use actix_web_template::configuration::{HmacSecret, Settings};
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use secrecy::ExposeSecret;
@@ -24,5 +24,5 @@ async fn main() -> std::io::Result<()> {
     .await
     .expect("Failed to connect to postgres");
     let listener = TcpListener::bind(configuration.get_address())?;
-    run(listener, db_pool)?.await
+    run(listener, db_pool, HmacSecret(configuration.app.hmac_secret))?.await
 }

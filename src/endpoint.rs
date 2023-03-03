@@ -1,9 +1,12 @@
 use crate::auth::validate_request_auth;
-use crate::routes::{AuthError, PostError};
+use crate::routes::{AuthError, hmac_tagged_error_msg, LoginError, PostError};
 use crate::{init_request_trace, routes};
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web::error::InternalError;
+use actix_web::http::header::LOCATION;
 use proc_macros::add_path_const;
 use sqlx::PgPool;
+use crate::configuration::HmacSecret;
 
 /// Get the data associated with an email address, or return 400
 #[add_path_const]
@@ -66,7 +69,24 @@ pub async fn login_form() -> HttpResponse {
 pub async fn login(
     form: web::Form<routes::login::FormData>,
     pool: web::Data<PgPool>,
-) -> Result<HttpResponse, AuthError> {
+    secret: web::Data<HmacSecret>,
+) -> Result<HttpResponse, LoginError> {
     init_request_trace!("Login Attempt", %form.username);
-    routes::login::login(form, pool).await
+    let login_result = routes::login::login(form, pool).await;
+    match login_result {
+        Ok(response) => Ok(response),
+        Err(e) => {
+            let error_msg = hmac_tagged_error_msg(&secret, e.to_string());
+
+            let response = HttpResponse::SeeOther()
+                .insert_header((
+                    LOCATION,
+                    format!("/login?{error_msg}")
+                ))
+                .finish();
+
+            Err(InternalError::from_response(e, response))
+        }
+    }
+
 }

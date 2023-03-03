@@ -6,3 +6,5 @@ database:
   username: "postgres"
   password: "password"
   database_name: "actix-web-template"
+app:
+  hmac_secret: "super-secret-thingy"

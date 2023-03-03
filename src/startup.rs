@@ -6,12 +6,15 @@ use actix_web::dev::Server;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
+use actix_web::web::Data;
 use tracing_actix_web::TracingLogger;
+use crate::configuration::HmacSecret;
 
 /// Run the server using the provided TCP Listener
 pub fn run(
     listener: TcpListener,
     db_pool: PgPool,
+    hmac_secret: HmacSecret,
 ) -> Result<Server, std::io::Error> {
     let connection_pool = web::Data::new(db_pool);
     // Build the app
@@ -27,6 +30,7 @@ pub fn run(
             .service(login_form)
             .service(login)
             .app_data(connection_pool.clone())
+            .app_data(Data::new(hmac_secret.clone()))
     })
     .listen(listener)?
     .run();
