@@ -1,5 +1,4 @@
 use crate::auth::validate_request_auth;
-use crate::configuration::HmacSecret;
 use crate::routes::{AuthError, LoginError, PostError};
 use crate::{init_request_trace, routes};
 use actix_web::cookie::Cookie;
@@ -60,12 +59,9 @@ pub async fn home() -> HttpResponse {
 
 #[add_path_const]
 #[get("/login")]
-pub async fn login_form(
-    query: Option<web::Query<routes::login::QueryParams>>,
-    secret: web::Data<HmacSecret>,
-) -> HttpResponse {
+pub async fn login_form(request: HttpRequest) -> HttpResponse {
     init_request_trace!("Get login form");
-    routes::login::login_form(query, secret).await
+    routes::login::login_form(request).await
 }
 
 #[add_path_const]
