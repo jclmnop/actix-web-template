@@ -4,7 +4,7 @@ use anyhow::{anyhow, Context};
 use base64::engine::general_purpose::STANDARD as base64_decoder;
 use base64::Engine;
 use itertools::Itertools;
-use secrecy::Secret;
+use secrecy::{ExposeSecret, Secret};
 use std::str::FromStr;
 use std::string::ToString;
 
@@ -137,6 +137,13 @@ impl Parseable<String> for Password {
         } else {
             Ok(Self(Secret::new(s)))
         }
+    }
+}
+
+impl Parseable<Secret<String>> for Password {
+    fn parse(input: Secret<String>) -> Result<Self, ParseError> {
+        let password = input.expose_secret().clone();
+        Password::parse(password)
     }
 }
 

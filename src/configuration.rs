@@ -3,12 +3,16 @@ use secrecy::{ExposeSecret, Secret};
 const CONFIG_FILE: &str = "config.yaml";
 const CONFIG_FORMAT: config::FileFormat = config::FileFormat::Yaml;
 
+#[derive(Clone)]
+pub struct HmacSecret(pub Secret<String>);
+
 /// Settings for the App
 #[derive(serde::Deserialize)]
 pub struct Settings {
     pub host: String,
     pub application_port: u16,
     pub database: DatabaseSettings,
+    pub app: AppSettings,
 }
 
 impl Settings {
@@ -23,6 +27,11 @@ impl Settings {
     pub fn get_address(&self) -> String {
         format!("{}:{}", self.host, self.application_port)
     }
+}
+
+#[derive(serde::Deserialize, Clone)]
+pub struct AppSettings {
+    pub hmac_secret: Secret<String>,
 }
 
 /// Settings for the database

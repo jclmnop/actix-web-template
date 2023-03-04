@@ -1,5 +1,7 @@
 use actix_web_template::auth::compute_password_hash;
-use actix_web_template::configuration::{DatabaseSettings, Settings};
+use actix_web_template::configuration::{
+    DatabaseSettings, HmacSecret, Settings,
+};
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
@@ -32,12 +34,6 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     };
 });
 
-pub struct TestApp {
-    pub address: String,
-    pub db_pool: PgPool,
-    pub test_user: TestUser,
-}
-
 /// Spawn an instance of the app using a random available port and return the
 /// address used, including the selected port.
 ///
@@ -61,46 +57,69 @@ pub async fn spawn_app() -> TestApp {
     // Create new database with randomised name
     let db_pool = configure_database(&configuration.database).await;
 
-    let server =
-        run(listener, db_pool.clone()).expect("Failed to bind address");
+    let server = run(
+        listener,
+        db_pool.clone(),
+        HmacSecret(configuration.app.hmac_secret),
+    )
+    .expect("Failed to bind address");
     let _ = tokio::spawn(server);
+
+    let api_client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .cookie_store(true)
+        .build()
+        .expect("Failed to build reqwest client");
 
     let test_app = TestApp {
         address,
         db_pool,
         test_user: TestUser::generate(),
+        api_client,
     };
     test_app.test_user.store(&test_app.db_pool).await;
 
     test_app
 }
 
-async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
-    let mut connection = PgConnection::connect(
-        db_config.connection_string_without_db().expose_secret(),
-    )
-    .await
-    .expect("Failed to connect to Postgres");
+pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
+    // Response is a redirect
+    assert_eq!(response.status().as_u16(), 303);
 
-    connection
-        .execute(
-            format!(r#"CREATE DATABASE "{}";"#, db_config.database_name)
-                .as_str(),
-        )
-        .await
-        .expect("Failed to create database");
+    // Response redirects to `location`
+    assert_eq!(response.headers().get("Location").unwrap(), location);
+}
 
-    let db_pool =
-        PgPool::connect(db_config.connection_string().expose_secret())
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+    pub test_user: TestUser,
+    pub api_client: reqwest::Client,
+}
+
+impl TestApp {
+    pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
+    where
+        Body: serde::Serialize,
+    {
+        self.api_client
+            .post(&format!("{}/login", &self.address))
+            .form(body)
+            .send()
             .await
-            .expect("Failed to connect to newly created database.");
+            .expect("Failed to execute login request")
+    }
 
-    sqlx::migrate!("./migrations")
-        .run(&db_pool)
-        .await
-        .expect("Failed to migrate newly created database");
-
-    db_pool
+    pub async fn get_login_html(&self) -> String {
+        self.api_client
+            .get(&format!("{}/login", &self.address))
+            .send()
+            .await
+            .expect("Failed to request login form")
+            .text()
+            .await
+            .expect("Failed to parse HTML from login form")
+    }
 }
 
 pub struct TestUser {
@@ -135,4 +154,32 @@ impl TestUser {
         .await
         .expect("Failed to store test user");
     }
+}
+
+async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
+    let mut connection = PgConnection::connect(
+        db_config.connection_string_without_db().expose_secret(),
+    )
+    .await
+    .expect("Failed to connect to Postgres");
+
+    connection
+        .execute(
+            format!(r#"CREATE DATABASE "{}";"#, db_config.database_name)
+                .as_str(),
+        )
+        .await
+        .expect("Failed to create database");
+
+    let db_pool =
+        PgPool::connect(db_config.connection_string().expose_secret())
+            .await
+            .expect("Failed to connect to newly created database.");
+
+    sqlx::migrate!("./migrations")
+        .run(&db_pool)
+        .await
+        .expect("Failed to migrate newly created database");
+
+    db_pool
 }

@@ -39,9 +39,15 @@ validator = "0.16.0"
 argon2 = { version = "0.4.1", features = ["std"] }
 rand = "0.8.5"
 base64 = "0.21.0"
+urlencoding = "2.1.2"
+hmac = { version = "0.12.1", features = ["std"] }
+sha2 = "0.10.6"
+hex = "0.4.3"
+htmlescape = "0.3.1"
+actix-web-flash-messages = { version = "0.4.2", features = ["cookies"] }
 
 [dev-dependencies]
-reqwest = "0.11.13"
+reqwest = { version = "0.11.13", default-features = false, features = ["json", "rustls-tls", "cookies"] }
 serde_json = "1.0.91"
 urlencoding = "2.1.2"
 strfmt = "0.2.2"

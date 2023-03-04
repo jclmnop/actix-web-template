@@ -1,8 +1,12 @@
+use crate::configuration::HmacSecret;
 use crate::domain::ParseError;
-use actix_web::http::header::HeaderValue;
+use actix_web::error::InternalError;
 use actix_web::http::StatusCode;
-use actix_web::{HttpResponse, ResponseError};
-use anyhow::anyhow;
+use actix_web::ResponseError;
+use hmac::{Hmac, Mac};
+use secrecy::ExposeSecret;
+use sha2::Sha256;
+use std::fmt::Formatter;
 
 //TODO: must be a way to remove duplicate code re: `impl std::fmt::Debug`,
 //      maybe a Derive(ErrorChain) macro?
@@ -33,6 +37,8 @@ pub enum AuthError {
     UnexpectedError(#[from] anyhow::Error),
 }
 
+pub type LoginError = InternalError<AuthError>;
+
 impl ResponseError for GetError {
     fn status_code(&self) -> StatusCode {
         match self {
@@ -44,7 +50,7 @@ impl ResponseError for GetError {
 }
 
 impl std::fmt::Debug for GetError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         error_chain_fmt(self, f)
     }
 }
@@ -59,7 +65,7 @@ impl ResponseError for PostError {
 }
 
 impl std::fmt::Debug for PostError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         error_chain_fmt(self, f)
     }
 }
@@ -71,40 +77,59 @@ impl ResponseError for AuthError {
             AuthError::UnexpectedError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
-
-    fn error_response(&self) -> HttpResponse {
-        let mut response = HttpResponse::new(self.status_code());
-        match self {
-            AuthError::InvalidCredentials(_) => {
-                let header_value =
-                    HeaderValue::from_str(r#"Basic realm="publish""#)
-                        .map_err(|e| {
-                            return AuthError::UnexpectedError(anyhow!(
-                                "Failed to parse auth header for response: {e}"
-                            ))
-                            .error_response();
-                        })
-                        .unwrap();
-                response.headers_mut().insert(
-                    actix_web::http::header::WWW_AUTHENTICATE,
-                    header_value,
-                );
-                response
-            }
-            _ => response,
-        }
-    }
 }
 
 impl std::fmt::Debug for AuthError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         error_chain_fmt(self, f)
     }
 }
 
+pub fn error_msg_to_query_string(error_msg: &String) -> String {
+    format!("error={}", urlencoding::Encoded::new(error_msg))
+}
+
+/// Create a urlencoded error query param for the `error_msg`, tagged with an
+/// HMAC tag generated using the `secret`.
+pub fn hmac_tagged_error_query(
+    secret: &HmacSecret,
+    error_msg: String,
+) -> String {
+    // Convert error message to a valid query param
+    let query_string = error_msg_to_query_string(&error_msg);
+
+    // Use 'secret' to generate HMAC tag so error query param can be
+    // verified as authentic to avoid XSS
+    let hmac_tag = {
+        let mut mac =
+            Hmac::<Sha256>::new_from_slice(secret.0.expose_secret().as_bytes())
+                .expect("Error parsing HMAC");
+        mac.update(query_string.as_bytes());
+        mac.finalize().into_bytes()
+    };
+
+    format!("{query_string}&tag={hmac_tag:x}")
+}
+
+/// Verify that the HMAC `tag` encodes the `query_string` using the `secret`
+pub fn verify_hmac_query(
+    tag: &String,
+    query_string: &String,
+    secret: &HmacSecret,
+) -> Result<(), anyhow::Error> {
+    let tag = hex::decode(tag)?;
+
+    let mut mac =
+        Hmac::<Sha256>::new_from_slice(secret.0.expose_secret().as_bytes())?;
+    mac.update(query_string.as_bytes());
+    mac.verify_slice(&tag)?;
+
+    Ok(())
+}
+
 fn error_chain_fmt(
     e: &impl std::error::Error,
-    f: &mut std::fmt::Formatter<'_>,
+    f: &mut Formatter<'_>,
 ) -> std::fmt::Result {
     writeln!(f, "{e}\n")?;
     let mut current = e.source();
