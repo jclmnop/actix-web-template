@@ -34,12 +34,6 @@ static TRACING: Lazy<()> = Lazy::new(|| {
     };
 });
 
-pub struct TestApp {
-    pub address: String,
-    pub db_pool: PgPool,
-    pub test_user: TestUser,
-}
-
 /// Spawn an instance of the app using a random available port and return the
 /// address used, including the selected port.
 ///
@@ -81,32 +75,35 @@ pub async fn spawn_app() -> TestApp {
     test_app
 }
 
-async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
-    let mut connection = PgConnection::connect(
-        db_config.connection_string_without_db().expose_secret(),
-    )
-    .await
-    .expect("Failed to connect to Postgres");
+pub fn assert_is_redirect_to(response: &reqwest::Response, location: &str) {
+    // Response is a redirect
+    assert_eq!(response.status().as_u16(), 303);
 
-    connection
-        .execute(
-            format!(r#"CREATE DATABASE "{}";"#, db_config.database_name)
-                .as_str(),
-        )
-        .await
-        .expect("Failed to create database");
+    // Response redirects to `location`
+    assert_eq!(response.headers().get("Location").unwrap(), location);
+}
 
-    let db_pool =
-        PgPool::connect(db_config.connection_string().expose_secret())
+pub struct TestApp {
+    pub address: String,
+    pub db_pool: PgPool,
+    pub test_user: TestUser,
+}
+
+impl TestApp {
+    pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
+        where
+            Body: serde::Serialize,
+    {
+        reqwest::Client::builder()
+            .redirect(reqwest::redirect::Policy::none())
+            .build()
+            .expect("Failed to build reqwest client")
+            .post(&format!("{}/login", &self.address))
+            .form(body)
+            .send()
             .await
-            .expect("Failed to connect to newly created database.");
-
-    sqlx::migrate!("./migrations")
-        .run(&db_pool)
-        .await
-        .expect("Failed to migrate newly created database");
-
-    db_pool
+            .expect("Failed to execute login request")
+    }
 }
 
 pub struct TestUser {
@@ -141,4 +138,32 @@ impl TestUser {
         .await
         .expect("Failed to store test user");
     }
+}
+
+async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
+    let mut connection = PgConnection::connect(
+        db_config.connection_string_without_db().expose_secret(),
+    )
+        .await
+        .expect("Failed to connect to Postgres");
+
+    connection
+        .execute(
+            format!(r#"CREATE DATABASE "{}";"#, db_config.database_name)
+                .as_str(),
+        )
+        .await
+        .expect("Failed to create database");
+
+    let db_pool =
+        PgPool::connect(db_config.connection_string().expose_secret())
+            .await
+            .expect("Failed to connect to newly created database.");
+
+    sqlx::migrate!("./migrations")
+        .run(&db_pool)
+        .await
+        .expect("Failed to migrate newly created database");
+
+    db_pool
 }

@@ -1,7 +1,7 @@
 use crate::auth::validate_request_auth;
 use crate::configuration::HmacSecret;
 use crate::routes::{
-    hmac_tagged_error_query, AuthError, LoginError, PostError,
+    AuthError, LoginError, PostError,
 };
 use crate::{init_request_trace, routes};
 use actix_web::error::InternalError;
@@ -74,17 +74,14 @@ pub async fn login_form(
 pub async fn login(
     form: web::Form<routes::login::FormData>,
     pool: web::Data<PgPool>,
-    secret: web::Data<HmacSecret>,
 ) -> Result<HttpResponse, LoginError> {
     init_request_trace!("Login Attempt", %form.username);
     let login_result = routes::login::login(form, pool).await;
     match login_result {
         Ok(response) => Ok(response),
         Err(e) => {
-            let error_msg = hmac_tagged_error_query(&secret, e.to_string());
-
             let response = HttpResponse::SeeOther()
-                .insert_header((LOCATION, format!("/login?{error_msg}")))
+                .insert_header((LOCATION, "/login"))
                 .finish();
 
             Err(InternalError::from_response(e, response))

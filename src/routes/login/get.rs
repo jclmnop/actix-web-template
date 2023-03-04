@@ -1,7 +1,7 @@
 use crate::configuration::HmacSecret;
+use crate::routes::{error_msg_to_query_string, verify_hmac_query};
 use actix_web::http::header::ContentType;
 use actix_web::{web, HttpResponse};
-use crate::routes::{error_msg_to_query_string, verify_hmac_query};
 
 #[derive(serde::Deserialize)]
 pub struct QueryParams {
@@ -20,7 +20,10 @@ pub async fn login_form(
             match query.0.verify(&secret) {
                 Ok(error_msg) => {
                     // TODO: move formatting of html_errors to another function
-                    format!("<p><i>{}</i></p>", htmlescape::encode_minimal(&error_msg))
+                    format!(
+                        "<p><i>{}</i></p>",
+                        htmlescape::encode_minimal(&error_msg)
+                    )
                 }
                 Err(verification_error) => {
                     tracing::warn!(
