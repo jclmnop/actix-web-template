@@ -193,7 +193,9 @@ dependencies = [
  "claims",
  "config",
  "fake",
+ "hex",
  "hmac",
+ "htmlescape",
  "itertools",
  "once_cell",
  "proc-macros",
@@ -923,6 +925,12 @@ checksum = "6c49c37c09c17a53d937dfbb742eb3a961d65a994e6bcdcf37e7399d0cc8ab5e"
 dependencies = [
  "digest",
 ]
+
+[[package]]
+name = "htmlescape"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9025058dae765dee5070ec375f591e2ba14638c63feff74f13805a72e523163"
 
 [[package]]
 name = "http"

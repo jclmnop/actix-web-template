@@ -1,5 +1,7 @@
 use actix_web_template::auth::compute_password_hash;
-use actix_web_template::configuration::{DatabaseSettings, HmacSecret, Settings};
+use actix_web_template::configuration::{
+    DatabaseSettings, HmacSecret, Settings,
+};
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
@@ -61,8 +63,12 @@ pub async fn spawn_app() -> TestApp {
     // Create new database with randomised name
     let db_pool = configure_database(&configuration.database).await;
 
-    let server =
-        run(listener, db_pool.clone(), HmacSecret(configuration.app.hmac_secret)).expect("Failed to bind address");
+    let server = run(
+        listener,
+        db_pool.clone(),
+        HmacSecret(configuration.app.hmac_secret),
+    )
+    .expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
     let test_app = TestApp {

@@ -1,14 +1,14 @@
+use crate::configuration::HmacSecret;
 use crate::endpoint::{
     example_auth, example_get, example_post, health_check, home, login,
     login_form,
 };
 use actix_web::dev::Server;
+use actix_web::web::Data;
 use actix_web::{web, App, HttpServer};
 use sqlx::PgPool;
 use std::net::TcpListener;
-use actix_web::web::Data;
 use tracing_actix_web::TracingLogger;
-use crate::configuration::HmacSecret;
 
 /// Run the server using the provided TCP Listener
 pub fn run(

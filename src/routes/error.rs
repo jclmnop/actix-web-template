@@ -1,12 +1,12 @@
-use std::fmt::Formatter;
+use crate::configuration::HmacSecret;
 use crate::domain::ParseError;
+use actix_web::error::InternalError;
 use actix_web::http::StatusCode;
 use actix_web::ResponseError;
-use actix_web::error::InternalError;
 use hmac::{Hmac, Mac};
 use secrecy::ExposeSecret;
 use sha2::Sha256;
-use crate::configuration::HmacSecret;
+use std::fmt::Formatter;
 
 //TODO: must be a way to remove duplicate code re: `impl std::fmt::Debug`,
 //      maybe a Derive(ErrorChain) macro?
@@ -85,24 +85,46 @@ impl std::fmt::Debug for AuthError {
     }
 }
 
-pub fn hmac_tagged_error_msg(secret: &HmacSecret, error_msg: String) -> String {
+pub fn error_msg_to_query_string(error_msg: &String) -> String {
+    format!("error={}", urlencoding::Encoded::new(error_msg))
+}
+
+/// Create a urlencoded error query param for the `error_msg`, tagged with an
+/// HMAC tag generated using the `secret`.
+pub fn hmac_tagged_error_query(
+    secret: &HmacSecret,
+    error_msg: String,
+) -> String {
     // Convert error message to a valid query param
-    let query_string = format!(
-        "error={}",
-        urlencoding::Encoded::new(error_msg)
-    );
+    let query_string = error_msg_to_query_string(&error_msg);
 
     // Use 'secret' to generate HMAC tag so error query param can be
     // verified as authentic to avoid XSS
     let hmac_tag = {
-        let mut mac = Hmac::<Sha256>::new_from_slice(
-            secret.0.expose_secret().as_bytes()
-        ).expect("Error parsing HMAC");
+        let mut mac =
+            Hmac::<Sha256>::new_from_slice(secret.0.expose_secret().as_bytes())
+                .expect("Error parsing HMAC");
         mac.update(query_string.as_bytes());
         mac.finalize().into_bytes()
     };
 
     format!("{query_string}&tag={hmac_tag:x}")
+}
+
+/// Verify that the HMAC `tag` encodes the `query_string` using the `secret`
+pub fn verify_hmac_query(
+    tag: &String,
+    query_string: &String,
+    secret: &HmacSecret,
+) -> Result<(), anyhow::Error> {
+    let tag = hex::decode(tag)?;
+
+    let mut mac =
+        Hmac::<Sha256>::new_from_slice(secret.0.expose_secret().as_bytes())?;
+    mac.update(query_string.as_bytes());
+    mac.verify_slice(&tag)?;
+
+    Ok(())
 }
 
 fn error_chain_fmt(
