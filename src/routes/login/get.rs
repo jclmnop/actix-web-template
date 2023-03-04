@@ -1,18 +1,17 @@
-use actix_web::cookie::Cookie;
 use actix_web::http::header::ContentType;
-use actix_web::{HttpRequest, HttpResponse};
+use actix_web::HttpResponse;
+use actix_web_flash_messages::{IncomingFlashMessages, Level};
+use std::fmt::Write;
 
-pub async fn login_form(request: HttpRequest) -> HttpResponse {
+pub async fn login_form(flash_messages: IncomingFlashMessages) -> HttpResponse {
     // This would need to be inserted into the login.html body
-    let error_html = match request.cookie("_flash") {
-        None => "".into(),
-        Some(cookie) => {
-            // TODO: move formatting of html_errors to another function
-            format!("<p><i>{}</i></p>", cookie.value())
-        }
-    };
+    let mut error_html = String::new();
+    for m in flash_messages.iter().filter(|m| m.level() == Level::Error) {
+        writeln!(error_html, "<p><i>{}</i></p>", m.content())
+            .expect("Failed to write flash message.")
+    }
 
-    let mut response = HttpResponse::Ok()
+    HttpResponse::Ok()
         .content_type(ContentType::html())
         .body(format!(
             //TODO: must be a way to insert error_html into include_str!("login.html")
@@ -47,9 +46,5 @@ pub async fn login_form(request: HttpRequest) -> HttpResponse {
     </body>
 </html>
             "#
-        ));
-    response
-        .add_removal_cookie(&Cookie::new("_flash", ""))
-        .expect("Failed to add removal cookie");
-    response
+        ))
 }

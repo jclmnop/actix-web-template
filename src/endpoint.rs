@@ -1,10 +1,10 @@
 use crate::auth::validate_request_auth;
 use crate::routes::{AuthError, LoginError, PostError};
 use crate::{init_request_trace, routes};
-use actix_web::cookie::Cookie;
 use actix_web::error::InternalError;
 use actix_web::http::header::LOCATION;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
+use actix_web_flash_messages::{FlashMessage, IncomingFlashMessages};
 use proc_macros::add_path_const;
 use sqlx::PgPool;
 
@@ -59,9 +59,9 @@ pub async fn home() -> HttpResponse {
 
 #[add_path_const]
 #[get("/login")]
-pub async fn login_form(request: HttpRequest) -> HttpResponse {
+pub async fn login_form(flash_messages: IncomingFlashMessages) -> HttpResponse {
     init_request_trace!("Get login form");
-    routes::login::login_form(request).await
+    routes::login::login_form(flash_messages).await
 }
 
 #[add_path_const]
@@ -75,9 +75,10 @@ pub async fn login(
     match login_result {
         Ok(response) => Ok(response),
         Err(e) => {
+            FlashMessage::error(e.to_string()).send();
             let response = HttpResponse::SeeOther()
                 .insert_header((LOCATION, "/login"))
-                .cookie(Cookie::new("_flash", e.to_string()))
+                // .cookie(Cookie::new("_flash", e.to_string()))
                 .finish();
 
             Err(InternalError::from_response(e, response))

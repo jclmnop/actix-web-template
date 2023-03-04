@@ -7,4 +7,4 @@ database:
   password: "password"
   database_name: "actix-web-template"
 app:
-  hmac_secret: "super-secret-thingy"
+  hmac_secret: "super-long-and-secret-random-key-needed-to-verify-message-integrity"

@@ -15,11 +15,6 @@ async fn error_flash_msg_is_set_on_failed_login_attempt() {
 
     assert_is_redirect_to(&response, "/login");
 
-    // Flash cookie is set correctly
-    let flash_cookie =
-        response.cookies().find(|c| c.name() == "_flash").unwrap();
-    assert_eq!(flash_cookie.value(), ERROR_MSG);
-
     // HTML error msg is rendered correctly
     let html_page = app.get_login_html().await;
     assert!(html_page.contains(&error_html));
