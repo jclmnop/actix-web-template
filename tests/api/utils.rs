@@ -65,10 +65,17 @@ pub async fn spawn_app() -> TestApp {
     .expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
+    let api_client = reqwest::Client::builder()
+        .redirect(reqwest::redirect::Policy::none())
+        .cookie_store(true)
+        .build()
+        .expect("Failed to build reqwest client");
+
     let test_app = TestApp {
         address,
         db_pool,
         test_user: TestUser::generate(),
+        api_client,
     };
     test_app.test_user.store(&test_app.db_pool).await;
 
@@ -87,22 +94,31 @@ pub struct TestApp {
     pub address: String,
     pub db_pool: PgPool,
     pub test_user: TestUser,
+    pub api_client: reqwest::Client,
 }
 
 impl TestApp {
     pub async fn post_login<Body>(&self, body: &Body) -> reqwest::Response
-        where
-            Body: serde::Serialize,
+    where
+        Body: serde::Serialize,
     {
-        reqwest::Client::builder()
-            .redirect(reqwest::redirect::Policy::none())
-            .build()
-            .expect("Failed to build reqwest client")
+        self.api_client
             .post(&format!("{}/login", &self.address))
             .form(body)
             .send()
             .await
             .expect("Failed to execute login request")
+    }
+
+    pub async fn get_login_html(&self) -> String {
+        self.api_client
+            .get(&format!("{}/login", &self.address))
+            .send()
+            .await
+            .expect("Failed to request login form")
+            .text()
+            .await
+            .expect("Failed to parse HTML from login form")
     }
 }
 
@@ -144,8 +160,8 @@ async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
     let mut connection = PgConnection::connect(
         db_config.connection_string_without_db().expose_secret(),
     )
-        .await
-        .expect("Failed to connect to Postgres");
+    .await
+    .expect("Failed to connect to Postgres");
 
     connection
         .execute(

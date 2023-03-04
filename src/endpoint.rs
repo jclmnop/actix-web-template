@@ -1,9 +1,8 @@
 use crate::auth::validate_request_auth;
 use crate::configuration::HmacSecret;
-use crate::routes::{
-    AuthError, LoginError, PostError,
-};
+use crate::routes::{AuthError, LoginError, PostError};
 use crate::{init_request_trace, routes};
+use actix_web::cookie::Cookie;
 use actix_web::error::InternalError;
 use actix_web::http::header::LOCATION;
 use actix_web::{get, post, web, HttpRequest, HttpResponse, Responder};
@@ -82,6 +81,7 @@ pub async fn login(
         Err(e) => {
             let response = HttpResponse::SeeOther()
                 .insert_header((LOCATION, "/login"))
+                .cookie(Cookie::new("_flash", e.to_string()))
                 .finish();
 
             Err(InternalError::from_response(e, response))
