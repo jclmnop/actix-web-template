@@ -1,7 +1,7 @@
 use crate::configuration::HmacSecret;
 use crate::endpoint::{
-    example_auth, example_get, example_post, health_check, home, login,
-    login_form,
+    admin_dashboard, example_auth, example_get, example_post, health_check,
+    home, login, login_form,
 };
 use actix_session::storage::RedisSessionStore;
 use actix_session::SessionMiddleware;
@@ -46,6 +46,7 @@ pub async fn run(
             .service(home)
             .service(login_form)
             .service(login)
+            .service(admin_dashboard)
             .app_data(connection_pool.clone())
             .app_data(Data::new(hmac_secret.clone()))
     })

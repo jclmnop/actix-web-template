@@ -85,3 +85,10 @@ pub async fn login(
         }
     }
 }
+
+#[add_path_const]
+#[get("/admin/dashboard")]
+pub async fn admin_dashboard() -> HttpResponse {
+    init_request_trace!("Admin dashboard");
+    routes::admin_dashboard().await
+}

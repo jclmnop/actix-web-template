@@ -1,5 +1,6 @@
 use crate::auth::validate_credentials;
 use crate::domain::{Credentials, Parseable, Password, Username};
+use crate::endpoint::admin_dashboard;
 use crate::routes::AuthError;
 use actix_web::http::header::LOCATION;
 use actix_web::{web, HttpResponse};
@@ -31,7 +32,7 @@ pub async fn login(
     };
     match validate_credentials(credentials, &pool).await {
         Ok(_) => Ok(HttpResponse::SeeOther()
-            .insert_header((LOCATION, "/"))
+            .insert_header((LOCATION, admin_dashboard::PATH))
             .finish()),
         Err(e) => Err(e),
     }
