@@ -17,11 +17,11 @@ async fn main() -> std::io::Result<()> {
     );
     init_subscriber(subscriber);
 
-    let configuration = Settings::get_config().expect("Failed to load config");
-    let db_pool = PgPool::connect(
+    let configuration =
+        Settings::get_config().expect("Failed to load configuration");
+    let db_pool = PgPool::connect_lazy(
         configuration.database.connection_string().expose_secret(),
     )
-    .await
     .expect("Failed to connect to postgres");
     let listener = TcpListener::bind(configuration.get_address())?;
     run(listener, db_pool, HmacSecret(configuration.app.hmac_secret))?.await

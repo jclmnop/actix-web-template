@@ -1,0 +1,82 @@
+{
+  "db": "PostgreSQL",
+  "1a0a8d2a9ed67af25893c1f19322043041fcfd9e5c0f03c55c976444a4026d34": {
+    "describe": {
+      "columns": [
+        {
+          "name": "username",
+          "ordinal": 0,
+          "type_info": "Text"
+        },
+        {
+          "name": "password",
+          "ordinal": 1,
+          "type_info": "Text"
+        }
+      ],
+      "nullable": [
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        SELECT username, password\n        FROM users\n        WHERE username = $1\n        "
+  },
+  "6f0b82dc14d556659e38ee729dcd112dc7ed66c20bb2b9a873f444ae9b817938": {
+    "describe": {
+      "columns": [
+        {
+          "name": "id",
+          "ordinal": 0,
+          "type_info": "Uuid"
+        },
+        {
+          "name": "email",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "name",
+          "ordinal": 2,
+          "type_info": "Text"
+        },
+        {
+          "name": "added_at",
+          "ordinal": 3,
+          "type_info": "Timestamptz"
+        }
+      ],
+      "nullable": [
+        false,
+        false,
+        false,
+        false
+      ],
+      "parameters": {
+        "Left": [
+          "Text"
+        ]
+      }
+    },
+    "query": "\n        SELECT *\n        FROM example\n        WHERE email = $1\n        "
+  },
+  "7c7981566753097a6d3245fab7beaeb53013efa3eec7f7a9f0add05528570dcb": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          "Text",
+          "Timestamptz"
+        ]
+      }
+    },
+    "query": "\n        INSERT INTO example (id, email, name, added_at)\n        VALUES ($1, $2, $3, $4)\n        "
+  }
+}
