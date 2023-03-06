@@ -21,7 +21,7 @@ chrono = { version = "0.4.23", default-features = false, features = ["clock"] }
 config = "0.13.3"
 serde = { version = "1.0.151", features = ["derive"] }
 serde_urlencoded = "0.7.1"
-sqlx = { version = "0.6.2", features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "chrono", "migrate"] }
+sqlx = { version = "0.6.2", features = ["runtime-actix-rustls", "macros", "postgres", "uuid", "chrono", "migrate", "offline"] }
 tokio = { version = "1.24.1", features = ["macros", "rt-multi-thread"] }
 uuid = { version = "1.2.2", features = ["v4"] }
 tracing = { version = "0.1.37", features = ["log"] }

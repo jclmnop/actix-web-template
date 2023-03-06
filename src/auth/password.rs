@@ -107,7 +107,7 @@ pub fn compute_password_hash(
     password: Secret<String>,
 ) -> Result<Secret<String>, AuthError> {
     let salt = SaltString::generate(&mut rand::thread_rng());
-    //TODO: replace fields with config inputs
+    //TODO: replace fields with configuration inputs
     let password_hash = Argon2::new(
         Algorithm::Argon2id,
         Version::V0x13,

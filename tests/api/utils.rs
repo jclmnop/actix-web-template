@@ -50,7 +50,7 @@ pub async fn spawn_app() -> TestApp {
     let address = format!("http://{TEST_HOST}:{actual_port}");
 
     let mut configuration =
-        Settings::get_config().expect("Failed to load config");
+        Settings::get_config().expect("Failed to load configuration");
 
     // Randomise database name so new database is used at start of each test
     configuration.database.database_name = Uuid::new_v4().to_string();

@@ -53,6 +53,7 @@ async fn unauthorised_for_invalid_username() {
     assert_eq!(StatusCode::UNAUTHORIZED, auth_response.status());
 }
 
+#[allow(unused_macros)]
 macro_rules! timeit {
     ($code:block) => {{
         let now = ::std::time::Instant::now();
