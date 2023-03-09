@@ -19,20 +19,22 @@ pub struct Settings {
 
 impl Settings {
     pub fn get_config() -> Result<Self, config::ConfigError> {
-        let base_path = std::env::current_dir()
-            .map_err(|_| {
-                config::ConfigError::NotFound("Current dir not found".into())
-            })?;
+        let base_path = std::env::current_dir().map_err(|_| {
+            config::ConfigError::NotFound("Current dir not found".into())
+        })?;
         let config_directory = base_path.join(CONFIG_DIR);
 
         let environment = Environment::get_env();
         let base_config_file = Self::base_config_file(&config_directory);
-        let env_config_file =
-            Self::env_config_file(&config_directory, &environment);
+        let env_specific_config_file = Self::environment_specific_config_file(
+            &config_directory,
+            &environment,
+        );
 
         let settings = config::Config::builder()
             .add_source(base_config_file)
-            .add_source(env_config_file)
+            .add_source(env_specific_config_file)
+            .add_source(Self::env_vars())
             .build()?;
 
         settings.try_deserialize::<Settings>()
@@ -46,8 +48,18 @@ impl Settings {
         config::File::from(dir.join(BASE_CONFIG_FILE))
     }
 
-    fn env_config_file(dir: &Path, env: &Environment) -> ConfigFile {
+    fn environment_specific_config_file(
+        dir: &Path,
+        env: &Environment,
+    ) -> ConfigFile {
         config::File::from(dir.join(env.as_filename()))
+    }
+
+    /// e.g. loads `$APP_APP-HMAC_SECRET` from environment to `Settings.app.hmac_secret`
+    fn env_vars() -> config::Environment {
+        config::Environment::with_prefix("APP")
+            .prefix_separator("_")
+            .separator("-")
     }
 }
 
