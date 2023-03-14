@@ -17,6 +17,7 @@ pub struct Settings {
     pub app: AppSettings,
 }
 
+// TODO: Use shellexpand crate?
 impl Settings {
     pub fn get_config() -> Result<Self, config::ConfigError> {
         let base_path = std::env::current_dir().map_err(|_| {
