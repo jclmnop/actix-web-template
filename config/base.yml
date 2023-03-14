@@ -1,8 +1,9 @@
 database:
-  host: "127.0.0.1"
-  port: 5432
-  username: "postgres"
-  password: "password"
-  database_name: "actix-web-template"
+  host: $DB_HOST
+  port: $DB_PORT
+  username: $DB_USERNAME
+  password: $DB_PASSWORD
+  database_name: $DB_NAME
 app:
   port: 8000
+  hmac_secret: $HMAC_SECRET

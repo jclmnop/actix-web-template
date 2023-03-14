@@ -1,3 +1,4 @@
+use std::io::Read;
 use anyhow::anyhow;
 use secrecy::{ExposeSecret, Secret};
 use std::path::Path;
@@ -5,7 +6,7 @@ use std::path::Path;
 const CONFIG_DIR: &str = "config";
 const BASE_CONFIG_FILE: &str = "base.yml";
 
-type ConfigFile = config::File<config::FileSourceFile, config::FileFormat>;
+type ConfigFile = config::File<config::FileSourceString, config::FileFormat>;
 
 #[derive(Clone)]
 pub struct HmacSecret(pub Secret<String>);
@@ -26,6 +27,9 @@ impl Settings {
         let config_directory = base_path.join(CONFIG_DIR);
 
         let environment = Environment::get_env();
+        if environment == Environment::Local {
+            dotenv::dotenv().expect(".env not found");
+        }
         let base_config_file = Self::base_config_file(&config_directory);
         let env_specific_config_file = Self::environment_specific_config_file(
             &config_directory,
@@ -35,6 +39,7 @@ impl Settings {
         let settings = config::Config::builder()
             .add_source(base_config_file)
             .add_source(env_specific_config_file)
+            // Overwrite settings using environment variables
             .add_source(Self::env_vars())
             .build()?;
 
@@ -46,19 +51,35 @@ impl Settings {
     }
 
     fn base_config_file(dir: &Path) -> ConfigFile {
-        config::File::from(dir.join(BASE_CONFIG_FILE))
+        Self::load_config_file(&dir.join(BASE_CONFIG_FILE), None)
     }
 
     fn environment_specific_config_file(
         dir: &Path,
         env: &Environment,
     ) -> ConfigFile {
-        config::File::from(dir.join(env.as_filename()))
+        Self::load_config_file(&dir.join(env.as_filename()), None)
     }
 
-    /// e.g. loads `$APP_APP-HMAC_SECRET` from environment to `Settings.app.hmac_secret`
+    /// Loads the config file and expands any environment $VARIABLES
+    fn load_config_file(dir: &Path, format: Option<config::FileFormat>) -> ConfigFile {
+        let format = format.unwrap_or(config::FileFormat::Yaml);
+        let mut file = std::fs::File::open(dir).expect("Error reading config file");
+
+        // Expand environment values
+        let mut conf_str = String::new();
+        file.read_to_string(&mut conf_str).expect("Error reading config file to string");
+        conf_str = shellexpand::env(&conf_str).unwrap().into();
+
+        config::File::from_str(&conf_str, format)
+    }
+
+    /// Used to overwrite config settings with environment variables, handy for
+    /// tweaking settings without rebuilding container.
+    ///
+    /// e.g. `$OVERWRITE_APP-HMAC_SECRET` -> `Settings.app.hmac_secret`
     fn env_vars() -> config::Environment {
-        config::Environment::with_prefix("APP")
+        config::Environment::with_prefix("OVERWRITE")
             .prefix_separator("_")
             .separator("-")
     }
@@ -104,6 +125,7 @@ impl DatabaseSettings {
     }
 }
 
+#[derive(PartialEq)]
 pub enum Environment {
     Local,
     Prod,
