@@ -1,8 +1,9 @@
-use std::io::Read;
 use anyhow::anyhow;
 use secrecy::{ExposeSecret, Secret};
+use sqlx::postgres::{PgConnectOptions, PgSslMode};
+use sqlx::ConnectOptions;
+use std::io::Read;
 use std::path::Path;
-use sqlx::postgres::PgConnectOptions;
 
 const CONFIG_DIR: &str = "config";
 const BASE_CONFIG_FILE: &str = "base.yml";
@@ -63,13 +64,18 @@ impl Settings {
     }
 
     /// Loads the config file and expands any environment $VARIABLES
-    fn load_config_file(dir: &Path, format: Option<config::FileFormat>) -> ConfigFile {
+    fn load_config_file(
+        dir: &Path,
+        format: Option<config::FileFormat>,
+    ) -> ConfigFile {
         let format = format.unwrap_or(config::FileFormat::Yaml);
-        let mut file = std::fs::File::open(dir).expect("Error reading config file");
+        let mut file =
+            std::fs::File::open(dir).expect("Error reading config file");
 
         // Expand environment values
         let mut conf_str = String::new();
-        file.read_to_string(&mut conf_str).expect("Error reading config file to string");
+        file.read_to_string(&mut conf_str)
+            .expect("Error reading config file to string");
         conf_str = shellexpand::env(&conf_str).unwrap().into();
 
         config::File::from_str(&conf_str, format)
@@ -101,21 +107,30 @@ pub struct DatabaseSettings {
     pub port: u16,
     pub host: String,
     pub database_name: String,
+    pub require_ssl: bool,
 }
 
 impl DatabaseSettings {
     /// Connection string for database
     pub fn with_db(&self) -> PgConnectOptions {
-        self.without_db().database(&self.database_name)
+        let mut db_options = self.without_db().database(&self.database_name);
+        db_options.log_statements(tracing::log::LevelFilter::Trace);
+        db_options
     }
 
     /// Connection string for top level Postgres instance
     pub fn without_db(&self) -> PgConnectOptions {
+        let ssl_mode = match self.require_ssl {
+            true => PgSslMode::Require,
+            false => PgSslMode::Prefer,
+        };
+
         PgConnectOptions::new()
             .host(&self.host)
             .port(self.port)
             .username(&self.username)
             .password(self.password.expose_secret())
+            .ssl_mode(ssl_mode)
     }
 }
 

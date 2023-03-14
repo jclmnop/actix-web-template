@@ -157,11 +157,9 @@ impl TestUser {
 }
 
 async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
-    let mut connection = PgConnection::connect_with(
-        &db_config.without_db(),
-    )
-    .await
-    .expect("Failed to connect to Postgres");
+    let mut connection = PgConnection::connect_with(&db_config.without_db())
+        .await
+        .expect("Failed to connect to Postgres");
 
     connection
         .execute(
@@ -171,10 +169,9 @@ async fn configure_database(db_config: &DatabaseSettings) -> PgPool {
         .await
         .expect("Failed to create database");
 
-    let db_pool =
-        PgPool::connect_with(db_config.with_db())
-            .await
-            .expect("Failed to connect to newly created database.");
+    let db_pool = PgPool::connect_with(db_config.with_db())
+        .await
+        .expect("Failed to connect to newly created database.");
 
     sqlx::migrate!("./migrations")
         .run(&db_pool)

@@ -1,5 +1,5 @@
-use secrecy::ExposeSecret;
 use actix_web_template::configuration::Settings;
+use secrecy::ExposeSecret;
 
 #[test]
 fn config_loads_without_error() {
@@ -17,8 +17,7 @@ fn config_env_vars_expand_without_error() {
     let env_val = "invalid-hmac-key-for-config-test";
     std::env::set_var(env_var, env_val);
 
-    let settings =
-        Settings::get_config().expect("Failed to load config");
+    let settings = Settings::get_config().expect("Failed to load config");
 
     assert_eq!(
         settings.app.hmac_secret.expose_secret(),
@@ -32,11 +31,7 @@ fn int_config_env_vars_correctly_parsed() {
     let env_val = 8000;
     std::env::set_var(env_var, env_val.to_string());
 
-    let settings =
-        Settings::get_config().expect("Failed to load config");
+    let settings = Settings::get_config().expect("Failed to load config");
 
-    assert_eq!(
-        settings.database.port,
-        env_val
-    );
+    assert_eq!(settings.database.port, env_val);
 }
