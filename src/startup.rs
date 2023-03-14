@@ -29,7 +29,7 @@ pub fn run(
         FlashMessagesFramework::builder(message_store).build();
     // Build the app
     let server = HttpServer::new(move || {
-        //TODO: add service in config fn instead
+        //TODO: add service in configuration fn instead
         App::new()
             .wrap(message_framework.clone())
             .wrap(TracingLogger::default())
