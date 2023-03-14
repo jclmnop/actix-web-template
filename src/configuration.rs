@@ -2,6 +2,7 @@ use std::io::Read;
 use anyhow::anyhow;
 use secrecy::{ExposeSecret, Secret};
 use std::path::Path;
+use sqlx::postgres::PgConnectOptions;
 
 const CONFIG_DIR: &str = "config";
 const BASE_CONFIG_FILE: &str = "base.yml";
@@ -104,24 +105,17 @@ pub struct DatabaseSettings {
 
 impl DatabaseSettings {
     /// Connection string for database
-    pub fn connection_string(&self) -> Secret<String> {
-        let host = &self.host;
-        let port = self.port;
-        let username = &self.username;
-        let password = &self.password.expose_secret();
-        let database_name = &self.database_name;
-        Secret::new(format!(
-            "postgres://{username}:{password}@{host}:{port}/{database_name}"
-        ))
+    pub fn with_db(&self) -> PgConnectOptions {
+        self.without_db().database(&self.database_name)
     }
 
     /// Connection string for top level Postgres instance
-    pub fn connection_string_without_db(&self) -> Secret<String> {
-        let host = &self.host;
-        let port = self.port;
-        let username = &self.username;
-        let password = &self.password.expose_secret();
-        Secret::new(format!("postgres://{username}:{password}@{host}:{port}"))
+    pub fn without_db(&self) -> PgConnectOptions {
+        PgConnectOptions::new()
+            .host(&self.host)
+            .port(self.port)
+            .username(&self.username)
+            .password(self.password.expose_secret())
     }
 }
 
