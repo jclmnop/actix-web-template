@@ -2,3 +2,4 @@ app:
   host: "0.0.0.0"
 database:
   require_ssl: true
+redis_uri: $REDIS_URI

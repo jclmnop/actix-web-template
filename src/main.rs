@@ -8,7 +8,7 @@ const APP_NAME: &str = "example-app";
 const DEFAULT_LOG_LEVEL: &str = "info";
 
 #[tokio::main]
-async fn main() -> std::io::Result<()> {
+async fn main() -> anyhow::Result<()> {
     let subscriber = get_subscriber(
         APP_NAME.into(),
         DEFAULT_LOG_LEVEL.into(),
@@ -24,5 +24,13 @@ async fn main() -> std::io::Result<()> {
         .connect_lazy_with(configuration.database.with_db());
 
     let listener = TcpListener::bind(configuration.get_address())?;
-    run(listener, db_pool, HmacSecret(configuration.app.hmac_secret))?.await
+    let server = run(
+        listener,
+        db_pool,
+        HmacSecret(configuration.app.hmac_secret),
+        configuration.redis_uri,
+    )
+    .await?;
+    server.await?;
+    Ok(())
 }

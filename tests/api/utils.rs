@@ -61,7 +61,9 @@ pub async fn spawn_app() -> TestApp {
         listener,
         db_pool.clone(),
         HmacSecret(configuration.app.hmac_secret),
+        configuration.redis_uri,
     )
+    .await
     .expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
