@@ -45,6 +45,7 @@ sha2 = "0.10.6"
 hex = "0.4.3"
 htmlescape = "0.3.1"
 actix-web-flash-messages = { version = "0.4.2", features = ["cookies"] }
+actix-session = { version = "0.7.2", features = ["redis-rs-tls-session"] }
 shellexpand = "3.0.0"
 dotenvy = "0.15.6"
 

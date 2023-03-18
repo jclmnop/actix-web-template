@@ -18,6 +18,7 @@ pub struct HmacSecret(pub Secret<String>);
 pub struct Settings {
     pub database: DatabaseSettings,
     pub app: AppSettings,
+    pub redis_uri: Secret<String>,
 }
 
 // TODO: Use shellexpand crate?

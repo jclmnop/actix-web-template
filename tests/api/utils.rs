@@ -2,6 +2,7 @@ use actix_web_template::auth::compute_password_hash;
 use actix_web_template::configuration::{
     DatabaseSettings, HmacSecret, Settings,
 };
+use actix_web_template::endpoint::admin_dashboard;
 use actix_web_template::startup::run;
 use actix_web_template::telemetry::{get_subscriber, init_subscriber};
 use once_cell::sync::Lazy;
@@ -61,7 +62,9 @@ pub async fn spawn_app() -> TestApp {
         listener,
         db_pool.clone(),
         HmacSecret(configuration.app.hmac_secret),
+        configuration.redis_uri,
     )
+    .await
     .expect("Failed to bind address");
     let _ = tokio::spawn(server);
 
@@ -119,6 +122,17 @@ impl TestApp {
             .text()
             .await
             .expect("Failed to parse HTML from login form")
+    }
+
+    pub async fn get_admin_dashboard(&self) -> String {
+        self.api_client
+            .get(&format!("{}{}", &self.address, admin_dashboard::PATH))
+            .send()
+            .await
+            .expect("Failed to get admin dashboard")
+            .text()
+            .await
+            .expect("Failed to parse HTML from admin dashboard")
     }
 }
 
