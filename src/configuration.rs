@@ -31,7 +31,7 @@ impl Settings {
 
         let environment = Environment::get_env();
         if environment == Environment::Local {
-            dotenv::dotenv().expect(".env not found");
+            dotenvy::dotenv().expect(".env not found");
         }
         let base_config_file = Self::base_config_file(&config_directory);
         let env_specific_config_file = Self::environment_specific_config_file(
